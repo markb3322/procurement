@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+<title>Procurement Records | BEPO-PESO</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --bg: #f0f2f7;
+  --surface: #ffffff;
+  --surface2: #f7f9fc;
+  --border: #e2e8f0;
+  --text: #0d1b2e;
+  --text2: #4a5a6e;
+  --muted: #8a97a8;
+  --accent: #1a56db;
+  --accent-dark: #1345b7;
+  --accent-light: #ebf0ff;
+  --green: #0d7e4b;
+  --green-bg: #e6f5ec;
+  --red: #dc2626;
+  --red-bg: #fdecea;
+  --amber: #d97706;
+  --amber-bg: #fef3c7;
+  --font: 'DM Sans', system-ui, sans-serif;
+  --mono: 'DM Mono', monospace;
+  --radius: 14px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 3px rgba(13,27,46,0.06), 0 8px 24px rgba(13,27,46,0.07);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; font-size: 15px; line-height: 1.6; }
+.main { padding: 28px 32px 40px; max-width: 100%; margin: 0 auto; animation: fadeUp 0.4s ease both; width: 100%; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+.page-header { margin-bottom: 8px; }
+.page-header h2 { font-size: 22px; font-weight: 700; color: var(--text); letter-spacing: -0.4px; display: flex; align-items: center; gap: 8px; }
+.page-subtitle { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+
+.header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
+.btn { display: inline-flex; align-items: center; gap: 7px; border: none; border-radius: 10px; padding: 9px 18px; font-size: 13.5px; font-weight: 600; font-family: var(--font); cursor: pointer; transition: all 0.14s ease; white-space: nowrap; text-decoration: none; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-dark); transform: translateY(-1px); }
+.btn-secondary { background: var(--surface); color: var(--text2); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--surface2); }
+.btn-danger { background: var(--red-bg); color: var(--red); border: 1px solid transparent; }
+.btn-danger:hover { background: #fce4e4; border-color: var(--red); }
+.btn-sm { padding: 5px 10px; font-size: 12px; border-radius: 6px; }
+
+.filter-bar { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+.filter-bar label { font-size: 12px; font-weight: 600; color: var(--text2); white-space: nowrap; }
+.filter-bar select { padding: 7px 12px; border: 1.5px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font-size: 12.5px; font-family: var(--font); cursor: pointer; outline: none; }
+.filter-bar select:focus { border-color: var(--accent); }
+.filter-bar .badge-count { font-size: 12px; color: var(--accent); background: var(--accent-light); padding: 5px 12px; border-radius: 20px; font-weight: 600; margin-left: auto; }
+
+.table-card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); overflow: hidden; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 600px; }
+thead { background: var(--surface2); border-bottom: 2px solid var(--border); position: sticky; top: 0; }
+th { padding: 10px 12px; text-align: left; font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+tbody tr:hover { background: var(--accent-light); }
+.td-actions { display: flex; gap: 4px; }
+.td-mono { font-family: var(--mono); font-weight: 600; color: var(--accent-dark); }
+.empty-state { text-align: center; padding: 40px; color: var(--muted); }
+.badge { display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 20px; font-size: 10.5px; font-weight: 600; white-space: nowrap; }
+.badge-complete { background: var(--green-bg); color: var(--green); }
+.badge-incomplete { background: var(--amber-bg); color: #92400e; }
+
+tfoot { background: var(--surface2); border-top: 2px solid var(--border); font-weight: 700; }
+tfoot td { padding: 10px 12px; font-size: 13px; color: var(--text); }
+
+.modal-overlay { position: fixed; inset: 0; background: rgba(13,27,46,0.45); backdrop-filter: blur(3px); z-index: 500; display: none; align-items: center; justify-content: center; padding: 20px; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--surface); border-radius: 16px; width: 100%; max-width: 500px; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); animation: modalIn 0.2s ease; }
+@keyframes modalIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--surface); z-index: 10; }
+.modal-header h3 { font-size: 16px; font-weight: 600; }
+.modal-close { width: 30px; height: 30px; border-radius: 8px; border: none; background: var(--surface2); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; color: var(--muted); }
+.modal-close:hover { background: var(--border); }
+.modal-body { padding: 20px 22px; }
+.modal-body .detail-row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.modal-body .detail-row:last-child { border-bottom: none; }
+.modal-body .detail-label { font-size: 10.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; min-width: 100px; flex-shrink: 0; padding-top: 2px; }
+.modal-body .detail-value { color: var(--text); font-weight: 500; word-break: break-word; }
+
+.toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+.toast { background: #0d1b2e; color: #fff; padding: 12px 18px; border-radius: 12px; font-size: 14px; font-weight: 500; box-shadow: 0 8px 30px rgba(0,0,0,0.2); pointer-events: all; animation: slideIn 0.25s ease; }
+.toast.success .toast-icon { color: #4ade80; }
+.toast.error .toast-icon { color: #f87171; }
+@keyframes slideIn { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
+
+@media (max-width: 800px) { .main { padding: 16px 14px 32px; } }
+</style>
+</head>
+<body>
+
+<main class="main">
+  <div class="page-header">
+    <h2>📋 Procurement Records</h2>
+  </div>
+  <p class="page-subtitle">Dynamic columns based on category settings · No Category column</p>
+
+  <div class="header-actions">
+    <a href="add_record.html" class="btn btn-primary">+ Add New Record</a>
+  </div>
+
+  <div class="filter-bar">
+    <label>Month:</label>
+    <select id="filterMonth" onchange="applyFilters()">
+      <option value="">All</option>
+      <option value="0">Jan</option><option value="1">Feb</option><option value="2">Mar</option>
+      <option value="3">Apr</option><option value="4">May</option><option value="5">Jun</option>
+      <option value="6">Jul</option><option value="7">Aug</option><option value="8">Sep</option>
+      <option value="9">Oct</option><option value="10">Nov</option><option value="11">Dec</option>
+    </select>
+    <label>Category:</label>
+    <select id="filterCategory" onchange="applyFilters()">
+      <option value="">All Categories</option>
+    </select>
+    <label>Payment:</label>
+    <select id="filterPayment" onchange="applyFilters()">
+      <option value="">All</option>
+      <option value="Upon Completion">Upon Completion</option>
+      <option value="Progress Billing">Progress Billing</option>
+    </select>
+    <label>Bid Status:</label>
+    <select id="filterBidStatus" onchange="applyFilters()">
+      <option value="">All</option>
+      <option value="Complete">Complete</option>
+      <option value="Incomplete">Incomplete</option>
+    </select>
+    <span class="badge-count" id="countBadge">0 records</span>
+  </div>
+
+  <div class="table-card">
+    <div class="table-wrap">
+      <table>
+        <thead id="tableHead"></thead>
+        <tbody id="tableBody">
+          <tr><td colspan="10"><div class="empty-state">Loading records…</div></td></tr>
+        </tbody>
+        <tfoot id="tableFoot" style="display:none;"></tfoot>
+      </table>
+    </div>
+  </div>
+</main>
+
+<div class="modal-overlay" id="viewModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Record Details</h3>
+      <button class="modal-close" onclick="closeViewModal()">✕</button>
+    </div>
+    <div class="modal-body" id="viewModalBody"></div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="navbar.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+  if (window.renderPMSNavbar) renderPMSNavbar();
+
+  const SUPABASE_URL = 'https://iharcxdakmyxjpqpcbnb.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloYXJjeGRha215eGpwcXBjYm5iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0ODc0NDEsImV4cCI6MjA5NDA2MzQ0MX0.5BE8ckW-3g5mJmXyrDWO_cytfI-_JrMaV4LQip7pbvs';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  let records = [];
+  let categories = [];
+  let settings = [];
+  // Global columns = all unique enabled fields from ALL settings (excluding tracking keys)
+  let globalColumns = [];
+
+  const TRACKING_KEYS = ['pr_number', 'nc_number', 'po_number', 'padmo_number', 'go_finance_number'];
+
+  const FIELD_LABELS = {
+    event: 'Event', date: 'Date', quarter: 'Quarter', menu: 'Menu',
+    unit_pax: 'Unit/Pax', description: 'Description', quantity: 'Qty',
+    price: 'Price', item: 'Item', supplier: 'Supplier',
+    mode_of_payment: 'Payment Mode', scope_of_work: 'Scope of Work',
+    bid_doc_status: 'Bid Status', remarks: 'Remarks', time: 'Time',
+    pr_number: 'PR No.', nc_number: 'NC No.', po_number: 'PO No.',
+    padmo_number: 'PADMO No.', go_finance_number: 'G.O Finance No.'
+  };
+
+  function toast(msg, type) {
+    type = type || 'success';
+    var d = document.createElement('div');
+    d.className = 'toast ' + type;
+    d.innerHTML = '<span class="toast-icon">' + (type === 'success' ? '✓' : '✕') + '</span><span>' + msg + '</span>';
+    document.getElementById('toastContainer').appendChild(d);
+    setTimeout(function() { d.remove(); }, 3000);
+  }
+
+  async function loadData() {
+    try {
+      var catRes = await sb.from('procurement_categories').select('*').order('name', { ascending: true });
+      if (catRes.error) throw catRes.error;
+      categories = catRes.data || [];
+      populateCategoryFilter();
+
+      var setRes = await sb.from('procurement_field_settings').select('*');
+      if (setRes.error) throw setRes.error;
+      settings = setRes.data || [];
+
+      // Build GLOBAL columns = all unique enabled fields from all settings (excluding tracking)
+      var fieldSet = new Set();
+      settings.forEach(function(s) {
+        (s.enabled_fields || []).forEach(function(f) {
+          if (TRACKING_KEYS.indexOf(f) === -1) {
+            fieldSet.add(f);
+          }
+        });
+      });
+      globalColumns = Array.from(fieldSet);
+
+      var recRes = await sb.from('procurement_records').select('*, procurement_categories(name), events!procurement_records_event_fkey(event_name), procurement_items!procurement_records_item_fkey(item_name, price)').order('created_at', { ascending: false });
+      if (recRes.error) throw recRes.error;
+      records = recRes.data || [];
+
+      renderTableHead();
+      applyFilters();
+    } catch (e) {
+      console.error('Load error:', e);
+      document.getElementById('tableBody').innerHTML = '<tr><td colspan="10"><div class="empty-state">Failed to load records</div></td></tr>';
+    }
+  }
+
+  function populateCategoryFilter() {
+    var select = document.getElementById('filterCategory');
+    select.innerHTML = '<option value="">All Categories</option>';
+    categories.forEach(function(cat) {
+      select.innerHTML += '<option value="' + cat.id + '">' + esc(cat.name) + '</option>';
+    });
+  }
+
+  function renderTableHead() {
+    var head = document.getElementById('tableHead');
+    var html = '<tr><th>#</th>';
+    globalColumns.forEach(function(col) {
+      html += '<th>' + (FIELD_LABELS[col] || col) + '</th>';
+    });
+    html += '<th>Actions</th></tr>';
+    head.innerHTML = html;
+  }
+
+  function applyFilters() {
+    var monthVal = document.getElementById('filterMonth').value;
+    var catVal = document.getElementById('filterCategory').value;
+    var payVal = document.getElementById('filterPayment').value;
+    var bidVal = document.getElementById('filterBidStatus').value;
+
+    var filtered = records.slice();
+
+    if (monthVal !== '') {
+      var monthNum = parseInt(monthVal);
+      filtered = filtered.filter(function(r) {
+        if (!r.created_at) return false;
+        return new Date(r.created_at).getMonth() === monthNum;
+      });
+    }
+    if (catVal !== '') {
+      filtered = filtered.filter(function(r) { return r.category_id === catVal; });
+    }
+    if (payVal !== '') {
+      filtered = filtered.filter(function(r) { return r.mode_of_payment === payVal; });
+    }
+    if (bidVal !== '') {
+      filtered = filtered.filter(function(r) { return r.bid_doc_status === bidVal; });
+    }
+
+    renderTableBody(filtered);
+  }
+  window.applyFilters = applyFilters;
+
+  function renderTableBody(filtered) {
+    var tbody = document.getElementById('tableBody');
+    var tfoot = document.getElementById('tableFoot');
+    document.getElementById('countBadge').textContent = filtered.length + ' record' + (filtered.length !== 1 ? 's' : '');
+
+    if (!filtered.length) {
+      tbody.innerHTML = '<tr><td colspan="' + (globalColumns.length + 2) + '"><div class="empty-state">No records found</div></td></tr>';
+      tfoot.style.display = 'none';
+      return;
+    }
+
+    var totalQty = 0;
+    var totalPrice = 0;
+    var totalItemCost = 0;
+    var grandTotal = 0;
+
+    tbody.innerHTML = filtered.map(function(r, i) {
+      var qty = Number(r.quantity) || 0;
+      var recordPrice = Number(r.price) || 0;
+      var itemPrice = (r.procurement_items && r.procurement_items.price) ? Number(r.procurement_items.price) : 0;
+      var itemTotalCost = itemPrice * qty;
+      var recordGrandTotal = recordPrice + itemTotalCost;
+      
+      totalQty += qty;
+      totalPrice += recordPrice;
+      totalItemCost += itemTotalCost;
+      grandTotal += recordGrandTotal;
+
+      // Get this record's category settings
+      var recordCatSettings = settings.find(function(s) { return s.category_id === r.category_id; });
+      var recordEnabledFields = recordCatSettings ? (recordCatSettings.enabled_fields || []) : [];
+
+      var rowHtml = '<tr><td style="color:var(--muted);font-size:11px;">' + (i + 1) + '</td>';
+      
+      globalColumns.forEach(function(col) {
+        // Check if this column is enabled for this record's category
+        if (recordEnabledFields.indexOf(col) === -1 && recordEnabledFields.length > 0) {
+          // Column NOT enabled for this category - show blank
+          rowHtml += '<td></td>';
+        } else {
+          var val = getDisplayValue(r, col);
+          if (col === 'price') {
+            rowHtml += '<td class="td-mono">₱' + recordPrice.toFixed(2) + '</td>';
+          } else if (col === 'item') {
+            var itemName = val || '—';
+            var itemPriceDisplay = itemPrice > 0 ? '₱' + itemPrice.toFixed(2) : '—';
+            rowHtml += '<td>' + itemName + '<br><small style="color:var(--muted);">Price: ' + itemPriceDisplay + '</small></td>';
+          } else if (col === 'quantity') {
+            rowHtml += '<td>' + (val || 0) + '</td>';
+          } else if (col === 'bid_doc_status') {
+            var isComplete = val === 'Complete';
+            rowHtml += '<td>' + (val ? '<span class="badge ' + (isComplete ? 'badge-complete' : 'badge-incomplete') + '">' + val + '</span>' : '—') + '</td>';
+          } else {
+            rowHtml += '<td>' + (val || '—') + '</td>';
+          }
+        }
+      });
+
+      rowHtml += '<td class="td-actions">' +
+        '<button class="btn btn-secondary btn-sm" onclick="viewRecord(\'' + r.id + '\')">👁️</button>' +
+        '<button class="btn btn-secondary btn-sm" onclick="editRecord(\'' + r.id + '\')">✏️</button>' +
+        '<button class="btn btn-danger btn-sm" onclick="deleteRecord(\'' + r.id + '\')">🗑️</button>' +
+      '</td></tr>';
+      return rowHtml;
+    }).join('');
+
+    tfoot.style.display = '';
+    tfoot.innerHTML = '<tr>' +
+      '<td colspan="' + (globalColumns.length + 2) + '" style="padding:14px 12px;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;font-size:13px;">' +
+          '<span>📊 Total Records: <strong>' + filtered.length + '</strong></span>' +
+          '<span>📦 Total Qty: <strong>' + totalQty + '</strong></span>' +
+          '<span>💰 Total Price: <strong style="font-family:var(--mono);">₱' + totalPrice.toLocaleString('en-PH', { minimumFractionDigits: 2 }) + '</strong></span>' +
+          '<span>🏷️ Item Cost: <strong style="font-family:var(--mono);">₱' + totalItemCost.toLocaleString('en-PH', { minimumFractionDigits: 2 }) + '</strong></span>' +
+          '<span style="font-size:15px;">💵 <strong>GRAND TOTAL: <span style="font-family:var(--mono);color:var(--accent);">₱' + grandTotal.toLocaleString('en-PH', { minimumFractionDigits: 2 }) + '</span></strong></span>' +
+        '</div>' +
+      '</td>' +
+    '</tr>';
+  }
+
+  function getDisplayValue(record, col) {
+    if (col === 'event') return record.events ? record.events.event_name : (record.event_name || '—');
+    if (col === 'item') return record.procurement_items ? record.procurement_items.item_name : (record.item_name || '—');
+    if (col === 'date' && record.date) return new Date(record.date).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+    return record[col] || '';
+  }
+
+  window.viewRecord = function(id) {
+    var r = records.find(function(x) { return x.id === id; });
+    if (!r) return;
+    var recordPrice = Number(r.price) || 0;
+    var itemPrice = (r.procurement_items && r.procurement_items.price) ? Number(r.procurement_items.price) : 0;
+    var qty = Number(r.quantity) || 0;
+    var grandTotal = recordPrice + (itemPrice * qty);
+
+    var html = '';
+    globalColumns.forEach(function(col) {
+      var val = getDisplayValue(r, col);
+      if (col === 'price') val = '₱' + recordPrice.toFixed(2);
+      if (col === 'item') {
+        var itemName = val || '—';
+        val = itemName + (itemPrice > 0 ? ' (Price: ₱' + itemPrice.toFixed(2) + ')' : '');
+      }
+      html += '<div class="detail-row"><span class="detail-label">' + (FIELD_LABELS[col] || col) + '</span><span class="detail-value">' + esc(val || '—') + '</span></div>';
+    });
+    html += '<div class="detail-row" style="background:var(--surface2);font-weight:700;">' +
+      '<span class="detail-label">Total Cost</span>' +
+      '<span class="detail-value" style="font-family:var(--mono);color:var(--accent);font-size:15px;">₱' + grandTotal.toFixed(2) + '</span>' +
+    '</div>';
+    if (r.documents && r.documents.length > 0) {
+      html += '<div class="detail-row"><span class="detail-label">Documents</span><span class="detail-value">' + esc(r.documents.join(', ')) + '</span></div>';
+    }
+    document.getElementById('viewModalBody').innerHTML = html;
+    document.getElementById('viewModal').classList.add('open');
+  };
+
+  window.closeViewModal = function() { document.getElementById('viewModal').classList.remove('open'); };
+  window.editRecord = function(id) { window.location.href = 'edit_record.html?id=' + id; };
+
+  window.deleteRecord = async function(id) {
+    if (!confirm('Delete this record?')) return;
+    try {
+      var res = await sb.from('procurement_records').delete().eq('id', id);
+      if (res.error) throw res.error;
+      records = records.filter(function(x) { return x.id !== id; });
+      applyFilters();
+      toast('Record deleted');
+    } catch (e) { toast('Delete failed: ' + (e.message || 'Error'), 'error'); }
+  };
+
+  document.getElementById('viewModal').addEventListener('click', function(e) { if (e.target === this) closeViewModal(); });
+
+  function esc(str) { if (!str) return ''; return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  loadData();
+});
+</script>
+</body>
+</html>

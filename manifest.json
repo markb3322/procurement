@@ -1,0 +1,127 @@
+{
+  "name": "BEPO-PESO Employee Portal",
+  "short_name": "BEPO-PESO",
+  "version": "1.0.0",
+  "description": "Employee Dashboard with Digital ID - Procurement Data System - Province of Bohol",
+  "author": "BEPO-PESO IT Division",
+  "organization": "Provincial Government of Bohol",
+  
+  "supabase": {
+    "project_url": "https://iharcxdakmyxjpqpcbnb.supabase.co",
+    "anon_key": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloYXJjeGRha215eGpwcXBjYm5iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0ODc0NDEsImV4cCI6MjA5NDA2MzQ0MX0.5BE8ckW-3g5mJmXyrDWO_cytfI-_JrMaV4LQip7pbvs"
+  },
+
+  "database": {
+    "table": "members",
+    "columns": [
+      "id",
+      "user_id",
+      "fullname",
+      "nickname",
+      "suffix",
+      "birthdate",
+      "id_number",
+      "sex",
+      "role",
+      "password",
+      "status",
+      "emergency_contact_name",
+      "emergency_contact_number",
+      "address",
+      "profile_image",
+      "background_image",
+      "created_at",
+      "updated_at"
+    ]
+  },
+
+  "pages": [
+    {
+      "file": "login.html",
+      "title": "Employee Login",
+      "route": "/login.html",
+      "description": "Login page with role-based redirect to employee dashboard"
+    },
+    {
+      "file": "employee/index.html",
+      "title": "Employee Dashboard",
+      "route": "/employee/index.html",
+      "description": "PH time greeting with employee profile card"
+    },
+    {
+      "file": "id_employee.html",
+      "title": "Digital Employee ID",
+      "route": "/id_employee.html",
+      "description": "National ID-style card with front/back flip"
+    },
+    {
+      "file": "logout.html",
+      "title": "Employee Logout",
+      "route": "/logout.html",
+      "description": "Sign out confirmation with profile preview"
+    }
+  ],
+
+  "features": [
+    "Employee login with BEPO-PESO ID and password",
+    "Personalized dashboard with Philippine time greeting",
+    "Profile picture display from database",
+    "Digital Employee ID card with National ID style",
+    "Front and back card flip animation",
+    "Emergency contact information display",
+    "Remember me functionality",
+    "Forgot password retrieval",
+    "Session-based authentication"
+  ],
+
+  "session_keys": [
+    "bepo_user_id",
+    "bepo_user_name",
+    "bepo_id_number",
+    "bepo_user_role"
+  ],
+
+  "redirects": {
+    "employee_login": "employee/index.html",
+    "logout": "login.html",
+    "unauthorized": "login.html"
+  },
+
+  "dependencies": {
+    "supabase_js": "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2",
+    "font_awesome": "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css",
+    "google_fonts": "DM Sans, DM Mono, Playfair Display"
+  },
+
+  "images": {
+    "logo": "image/bepo.png",
+    "pgbh_logo": "image/pgbh.png"
+  },
+
+  "installation": [
+    "Upload all HTML files to web server",
+    "Create Supabase project with members table",
+    "Update Supabase credentials in all HTML files",
+    "Place logo images in image/ folder",
+    "Register employee accounts",
+    "Access via login.html"
+  ],
+
+  "sample_employee": {
+    "fullname": "Juan Dela Cruz",
+    "nickname": "Juan",
+    "birthdate": "1990-05-15",
+    "id_number": "BEPO-EMP-001",
+    "sex": "Male",
+    "role": "Employee",
+    "password": "Juan35!",
+    "status": "Active"
+  },
+
+  "meta": {
+    "created": "2026-05-20",
+    "status": "Production Ready",
+    "total_pages": 4,
+    "role": "Employee"
+  }
+}

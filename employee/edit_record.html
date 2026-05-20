@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+<title>Edit Procurement Record | BEPO-PESO</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --bg: #f0f2f7;
+  --surface: #ffffff;
+  --surface2: #f7f9fc;
+  --border: #e2e8f0;
+  --text: #0d1b2e;
+  --text2: #4a5a6e;
+  --muted: #8a97a8;
+  --accent: #1a56db;
+  --accent-dark: #1345b7;
+  --accent-light: #ebf0ff;
+  --green: #0d7e4b;
+  --green-bg: #e6f5ec;
+  --red: #dc2626;
+  --red-bg: #fdecea;
+  --amber: #d97706;
+  --amber-bg: #fef3c7;
+  --font: 'DM Sans', system-ui, sans-serif;
+  --mono: 'DM Mono', monospace;
+  --radius: 14px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 3px rgba(13,27,46,0.06), 0 8px 24px rgba(13,27,46,0.07);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; font-size: 15px; line-height: 1.6; }
+.main { padding: 28px 32px 40px; max-width: 900px; margin: 0 auto; animation: fadeUp 0.4s ease both; width: 100%; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+.page-header h2 { font-size: 22px; font-weight: 700; color: var(--text); letter-spacing: -0.4px; display: flex; align-items: center; gap: 8px; }
+.page-subtitle { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+
+.btn { display: inline-flex; align-items: center; gap: 7px; border: none; border-radius: 10px; padding: 9px 18px; font-size: 13.5px; font-weight: 600; font-family: var(--font); cursor: pointer; transition: all 0.14s ease; white-space: nowrap; text-decoration: none; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-dark); transform: translateY(-1px); }
+.btn-secondary { background: var(--surface); color: var(--text2); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--surface2); }
+.btn-back { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+.btn-back:hover { background: var(--border); }
+
+.form-card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 20px; }
+.form-card-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+.form-card-header h3 { font-size: 14px; font-weight: 600; }
+.form-card-body { padding: 20px; }
+
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-group.full { grid-column: 1 / -1; }
+.form-group label { font-size: 11.5px; font-weight: 600; color: var(--text2); }
+.form-group input, .form-group select, .form-group textarea { padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 13.5px; font-family: var(--font); outline: none; background: var(--surface2); width: 100%; }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent); background: #fff; }
+.form-group textarea { resize: vertical; min-height: 60px; }
+.form-group .required::after { content: ' *'; color: var(--red); }
+.input-prefix { position: relative; }
+.input-prefix span { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 14px; font-weight: 500; pointer-events: none; }
+.input-prefix input { padding-left: 26px; }
+
+.section-title { font-size: 13px; font-weight: 700; color: var(--text); margin: 20px 0 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+
+.check-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+.check-item { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: var(--surface2); border-radius: var(--radius-sm); border: 1.5px solid var(--border); cursor: pointer; transition: all 0.14s; user-select: none; }
+.check-item:hover { border-color: var(--accent); background: var(--accent-light); }
+.check-item input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; margin: 0; }
+.check-item span { font-size: 13px; font-weight: 500; color: var(--text2); }
+.check-item.checked { border-color: var(--accent); background: var(--accent-light); }
+.check-item.checked span { color: var(--accent-dark); }
+
+.form-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+
+.loading-overlay { position: fixed; inset: 0; background: rgba(13,27,46,0.5); backdrop-filter: blur(4px); z-index: 9999; display: none; align-items: center; justify-content: center; }
+.loading-overlay.show { display: flex; }
+.loading-card { background: var(--surface); border-radius: 20px; padding: 32px 40px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+.loading-spinner { width: 48px; height: 48px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 16px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-size: 15px; font-weight: 600; color: var(--text); }
+.success-icon { font-size: 48px; color: var(--green); margin-bottom: 8px; }
+
+.toast-container { position: fixed; top: 20px; right: 20px; z-index: 9998; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+.toast { background: #0d1b2e; color: #fff; padding: 12px 18px; border-radius: 12px; font-size: 14px; font-weight: 500; box-shadow: 0 8px 30px rgba(0,0,0,0.2); pointer-events: all; animation: slideIn 0.25s ease; }
+.toast.success .toast-icon { color: #4ade80; }
+.toast.error .toast-icon { color: #f87171; }
+@keyframes slideIn { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
+
+@media (max-width: 700px) { .form-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<main class="main">
+  <div class="page-header">
+    <h2>✏️ Edit Procurement Record</h2>
+    <a href="list_record.html" class="btn btn-back">← Back to Records</a>
+  </div>
+  <p class="page-subtitle" id="editSubtitle">Loading record data…</p>
+
+  <div class="form-card" id="dynamicFormCard" style="display:none;">
+    <div class="form-card-header"><h3>📝 Procurement Details</h3></div>
+    <div class="form-card-body">
+      <form id="procurementForm" novalidate>
+        <div class="form-grid" id="dynamicFields"></div>
+
+        <div id="trackingSection" style="display:none;">
+          <div class="section-title">🔢 Tracking Numbers</div>
+          <div class="form-grid" id="trackingFields"></div>
+        </div>
+
+        <div class="section-title">📄 Document Checklist</div>
+        <div class="check-grid" id="docChecklist">
+          <label class="check-item"><input type="checkbox" value="PR" onchange="this.parentElement.classList.toggle('checked', this.checked)" /><span>PR</span></label>
+          <label class="check-item"><input type="checkbox" value="ABC" onchange="this.parentElement.classList.toggle('checked', this.checked)" /><span>ABC</span></label>
+          <label class="check-item"><input type="checkbox" value="PPMP" onchange="this.parentElement.classList.toggle('checked', this.checked)" /><span>PPMP</span></label>
+          <label class="check-item"><input type="checkbox" value="ACT/DES" onchange="this.parentElement.classList.toggle('checked', this.checked)" /><span>ACT/DES</span></label>
+          <label class="check-item"><input type="checkbox" value="PDRS" onchange="this.parentElement.classList.toggle('checked', this.checked)" /><span>PDRS</span></label>
+          <label class="check-item"><input type="checkbox" value="APP" onchange="this.parentElement.classList.toggle('checked', this.checked)" /><span>APP</span></label>
+          <label class="check-item"><input type="checkbox" value="LETTER REQUEST" onchange="this.parentElement.classList.toggle('checked', this.checked)" /><span>LETTER REQUEST</span></label>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-primary" id="updateRecordBtn">💾 Update Record</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</main>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-card" id="loadingContent">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Updating record…</div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="navbar.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+  if (window.renderPMSNavbar) renderPMSNavbar();
+
+  const SUPABASE_URL = 'https://iharcxdakmyxjpqpcbnb.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloYXJjeGRha215eGpwcXBjYm5iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0ODc0NDEsImV4cCI6MjA5NDA2MzQ0MX0.5BE8ckW-3g5mJmXyrDWO_cytfI-_JrMaV4LQip7pbvs';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const recordId = urlParams.get('id');
+
+  if (!recordId) {
+    alert('No record ID provided. Redirecting to records page.');
+    window.location.href = 'list_record.html';
+    return;
+  }
+
+  let categories = [];
+  let settings = [];
+  let events = [];
+  let items = [];
+  let recordData = null;
+  let selectedCategoryId = null;
+  let selectedSettings = null;
+
+  const FIELD_DEFINITIONS = {
+    event:       { label: 'Event', type: 'select', optionsKey: 'events' },
+    date:        { label: 'Date', type: 'date' },
+    quarter:     { label: 'Quarter', type: 'select', options: ['1st Quarter','2nd Quarter','3rd Quarter','4th Quarter'] },
+    menu:        { label: 'Menu', type: 'text' },
+    unit_pax:    { label: 'Unit / Pax', type: 'text' },
+    description: { label: 'Description', type: 'textarea' },
+    quantity:    { label: 'Quantity', type: 'number' },
+    price:       { label: 'Price', type: 'number' },
+    item:        { label: 'Item', type: 'select', optionsKey: 'items' },
+    supplier:    { label: 'Supplier / Vendor', type: 'text' },
+    mode_of_payment: { label: 'Mode of Payment', type: 'select', options: ['Upon Completion','Progress Billing'] },
+    scope_of_work:   { label: 'Scope of Work', type: 'textarea' },
+    bid_doc_status:  { label: 'Bid Doc Status', type: 'select', options: ['Complete','Incomplete'] },
+    remarks:    { label: 'Remarks', type: 'text' },
+    time:        { label: 'Time', type: 'time' },
+    pr_number:   { label: 'PR No.', type: 'text' },
+    nc_number:   { label: 'NC No.', type: 'text' },
+    po_number:   { label: 'PO No.', type: 'text' },
+    padmo_number:{ label: 'PADMO No.', type: 'text' },
+    go_finance_number: { label: 'G.O Finance No.', type: 'text' },
+  };
+
+  const TRACKING_KEYS = ['pr_number', 'nc_number', 'po_number', 'padmo_number', 'go_finance_number'];
+
+  function toast(msg, type) {
+    type = type || 'success';
+    var d = document.createElement('div');
+    d.className = 'toast ' + type;
+    d.innerHTML = '<span class="toast-icon">' + (type === 'success' ? '✓' : '✕') + '</span><span>' + msg + '</span>';
+    document.getElementById('toastContainer').appendChild(d);
+    setTimeout(function() { d.remove(); }, 3000);
+  }
+
+  function showLoading() { document.getElementById('loadingOverlay').classList.add('show'); }
+  function hideLoading() { document.getElementById('loadingOverlay').classList.remove('show'); }
+
+  function showSuccess(msg) {
+    document.getElementById('loadingContent').innerHTML = '<div class="success-icon">✓</div><div class="loading-text">' + msg + '</div>';
+    document.getElementById('loadingOverlay').classList.add('show');
+    setTimeout(function() { window.location.href = 'list_record.html'; }, 1500);
+  }
+
+  async function loadData() {
+    try {
+      var catRes = await sb.from('procurement_categories').select('*').order('name', { ascending: true });
+      if (catRes.error) throw catRes.error;
+      categories = catRes.data || [];
+
+      var setRes = await sb.from('procurement_field_settings').select('*');
+      if (setRes.error) throw setRes.error;
+      settings = setRes.data || [];
+
+      var evtRes = await sb.from('events').select('*').order('event_name', { ascending: true });
+      if (evtRes.error) throw evtRes.error;
+      events = evtRes.data || [];
+
+      var itmRes = await sb.from('procurement_items').select('*').order('item_name', { ascending: true });
+      if (itmRes.error) throw itmRes.error;
+      items = itmRes.data || [];
+
+      // Load record
+      var recRes = await sb.from('procurement_records').select('*').eq('id', recordId).single();
+      if (recRes.error) throw recRes.error;
+      recordData = recRes.data;
+      
+      if (!recordData) throw new Error('Record not found');
+
+      selectedCategoryId = recordData.category_id;
+      selectedSettings = settings.find(function(s) { return s.category_id === selectedCategoryId; });
+      
+      document.getElementById('editSubtitle').textContent = 'Editing record: ' + (recordData.id || '').substring(0, 8);
+      document.getElementById('dynamicFormCard').style.display = 'block';
+      
+      renderDynamicForm();
+      populateFormValues();
+
+    } catch (e) {
+      console.error('Load error:', e);
+      document.getElementById('editSubtitle').textContent = 'Failed to load record';
+    }
+  }
+
+  function renderDynamicForm() {
+    var enabledFields = selectedSettings ? (selectedSettings.enabled_fields || []) : [];
+    var generalFields = enabledFields.filter(function(f) { return TRACKING_KEYS.indexOf(f) === -1; });
+    var trackingFields = enabledFields.filter(function(f) { return TRACKING_KEYS.indexOf(f) !== -1; });
+
+    var generalContainer = document.getElementById('dynamicFields');
+    generalContainer.innerHTML = generalFields.map(function(key) {
+      var def = FIELD_DEFINITIONS[key];
+      if (!def) return '';
+      if (key === 'price') {
+        return '<div class="form-group">' +
+          '<label class="required">' + def.label + '</label>' +
+          '<div class="input-prefix"><span>₱</span><input type="number" id="field_' + key + '" min="0" step="0.01" /></div>' +
+        '</div>';
+      }
+      return '<div class="form-group' + (def.type === 'textarea' ? ' full' : '') + '">' +
+        '<label class="required">' + def.label + '</label>' +
+        renderFieldInput(key, def) +
+      '</div>';
+    }).join('');
+
+    var trackingContainer = document.getElementById('trackingFields');
+    var trackingSection = document.getElementById('trackingSection');
+    
+    if (trackingFields.length > 0) {
+      trackingSection.style.display = 'block';
+      trackingContainer.innerHTML = trackingFields.map(function(key) {
+        var def = FIELD_DEFINITIONS[key];
+        if (!def) return '';
+        return '<div class="form-group">' +
+          '<label>' + def.label + '</label>' +
+          renderFieldInput(key, def) +
+        '</div>';
+      }).join('');
+    } else {
+      trackingSection.style.display = 'none';
+    }
+  }
+
+  function renderFieldInput(key, def) {
+    if (def.type === 'select' && def.optionsKey === 'events') {
+      return '<select id="field_' + key + '">' +
+        '<option value="">Select Event</option>' +
+        events.map(function(e) { return '<option value="' + e.id + '">' + esc(e.event_name) + '</option>'; }).join('') +
+      '</select>';
+    }
+    if (def.type === 'select' && def.optionsKey === 'items') {
+      return '<select id="field_' + key + '">' +
+        '<option value="">Select Item</option>' +
+        items.map(function(i) { return '<option value="' + i.id + '">' + esc(i.item_name) + '</option>'; }).join('') +
+      '</select>';
+    }
+    if (def.type === 'select' && def.options) {
+      return '<select id="field_' + key + '">' +
+        '<option value="">Select</option>' +
+        def.options.map(function(o) { return '<option value="' + o + '">' + o + '</option>'; }).join('') +
+      '</select>';
+    }
+    if (def.type === 'textarea') {
+      return '<textarea id="field_' + key + '" rows="2"></textarea>';
+    }
+    if (def.type === 'number') {
+      return '<input type="number" id="field_' + key + '" min="0" step="0.01" />';
+    }
+    if (def.type === 'date') {
+      return '<input type="date" id="field_' + key + '" />';
+    }
+    if (def.type === 'time') {
+      return '<input type="time" id="field_' + key + '" />';
+    }
+    return '<input type="text" id="field_' + key + '" />';
+  }
+
+  function populateFormValues() {
+    if (!recordData || !selectedSettings) return;
+
+    var enabledFields = selectedSettings.enabled_fields || [];
+
+    enabledFields.forEach(function(key) {
+      var el = document.getElementById('field_' + key);
+      if (!el) return;
+      
+      var val = recordData[key];
+      if (val === null || val === undefined) val = '';
+      
+      if (key === 'date' && val) {
+        el.value = val;
+      } else if (key === 'price') {
+        el.value = val || 0;
+      } else {
+        el.value = val;
+      }
+    });
+
+    // Populate document checklist
+    if (recordData.documents && recordData.documents.length > 0) {
+      var checkboxes = document.querySelectorAll('#docChecklist input[type="checkbox"]');
+      checkboxes.forEach(function(cb) {
+        if (recordData.documents.indexOf(cb.value) !== -1) {
+          cb.checked = true;
+          cb.parentElement.classList.add('checked');
+        }
+      });
+    }
+  }
+
+  function getFieldValue(key) {
+    var el = document.getElementById('field_' + key);
+    if (!el) return null;
+    return el.value.trim() || null;
+  }
+
+  function getCheckedDocs() {
+    var checkboxes = document.querySelectorAll('#docChecklist input[type="checkbox"]:checked');
+    return Array.from(checkboxes).map(function(cb) { return cb.value; });
+  }
+
+  document.getElementById('updateRecordBtn').addEventListener('click', async function() {
+    if (!selectedSettings || !(selectedSettings.enabled_fields || []).length) {
+      toast('No fields configured for this category', 'error'); return;
+    }
+
+    showLoading();
+
+    var enabledFields = selectedSettings.enabled_fields || [];
+    var payload = { documents: getCheckedDocs() };
+
+    enabledFields.forEach(function(key) {
+      var val = getFieldValue(key);
+      if (val !== null && val !== '') {
+        payload[key] = key === 'price' ? parseFloat(val) || 0 : val;
+      } else {
+        payload[key] = null;
+      }
+    });
+
+    try {
+      var res = await sb.from('procurement_records').update(payload).eq('id', recordId).select();
+      if (res.error) throw res.error;
+      showSuccess('Record updated successfully!');
+    } catch (err) {
+      hideLoading();
+      toast('Error: ' + (err.message || 'Failed to update'), 'error');
+    }
+  });
+
+  function esc(str) { if (!str) return ''; return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  loadData();
+});
+</script>
+</body>
+</html>

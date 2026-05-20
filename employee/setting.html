@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+<title>Settings | BEPO-PESO</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --bg: #f0f2f7;
+  --surface: #ffffff;
+  --surface2: #f7f9fc;
+  --border: #e2e8f0;
+  --text: #0d1b2e;
+  --text2: #4a5a6e;
+  --muted: #8a97a8;
+  --accent: #1a56db;
+  --accent-dark: #1345b7;
+  --accent-light: #ebf0ff;
+  --green: #0d7e4b;
+  --green-bg: #e6f5ec;
+  --red: #dc2626;
+  --red-bg: #fdecea;
+  --amber: #d97706;
+  --amber-bg: #fef3c7;
+  --font: 'DM Sans', system-ui, sans-serif;
+  --mono: 'DM Mono', monospace;
+  --radius: 14px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 3px rgba(13,27,46,0.06), 0 8px 24px rgba(13,27,46,0.07);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; font-size: 15px; line-height: 1.6; }
+.main { padding: 28px 32px 40px; max-width: 1300px; margin: 0 auto; animation: fadeUp 0.4s ease both; width: 100%; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+.page-header h2 { font-size: 22px; font-weight: 700; color: var(--text); letter-spacing: -0.4px; display: flex; align-items: center; gap: 8px; }
+.page-subtitle { font-size: 13px; color: var(--muted); margin-top: -16px; margin-bottom: 24px; }
+
+.btn { display: inline-flex; align-items: center; gap: 7px; border: none; border-radius: 10px; padding: 9px 18px; font-size: 13.5px; font-weight: 600; font-family: var(--font); cursor: pointer; transition: all 0.14s ease; white-space: nowrap; text-decoration: none; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-dark); transform: translateY(-1px); }
+.btn-secondary { background: var(--surface); color: var(--text2); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--surface2); }
+.btn-danger { background: var(--red-bg); color: var(--red); border: 1px solid transparent; }
+.btn-danger:hover { background: #fce4e4; border-color: var(--red); }
+.btn-sm { padding: 5px 10px; font-size: 12px; border-radius: 6px; }
+
+.settings-grid { display: grid; grid-template-columns: 300px 1fr; gap: 24px; }
+.settings-sidebar { display: flex; flex-direction: column; gap: 16px; }
+.settings-main { display: flex; flex-direction: column; gap: 16px; }
+
+.card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); overflow: hidden; }
+.card-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.card-header h3 { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.card-body { padding: 16px 20px; }
+
+.category-select-wrap { margin-bottom: 12px; }
+.category-select-wrap label { display: block; font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 6px; }
+.category-select-wrap select { width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; font-family: var(--font); outline: none; background: var(--surface2); cursor: pointer; }
+.category-select-wrap select:focus { border-color: var(--accent); }
+
+.section-title { font-size: 13px; font-weight: 700; color: var(--text); margin: 16px 0 10px; display: flex; align-items: center; gap: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+.section-title:first-child { margin-top: 0; }
+
+.check-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+.check-item { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: var(--surface2); border-radius: var(--radius-sm); border: 1.5px solid var(--border); cursor: pointer; transition: all 0.14s; user-select: none; }
+.check-item:hover { border-color: var(--accent); background: var(--accent-light); }
+.check-item input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; margin: 0; }
+.check-item span { font-size: 13px; font-weight: 500; color: var(--text2); }
+.check-item.checked { border-color: var(--accent); background: var(--accent-light); }
+.check-item.checked span { color: var(--accent-dark); }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead { background: var(--surface2); border-bottom: 2px solid var(--border); position: sticky; top: 0; }
+th { padding: 10px 14px; text-align: left; font-size: 10.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+tbody tr:hover { background: var(--accent-light); }
+.td-actions { display: flex; gap: 6px; }
+.empty-state { text-align: center; padding: 40px; color: var(--muted); }
+
+.field-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.field-tag { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; background: var(--accent-light); color: var(--accent); }
+
+.modal-overlay { position: fixed; inset: 0; background: rgba(13,27,46,0.45); backdrop-filter: blur(3px); z-index: 500; display: none; align-items: center; justify-content: center; padding: 20px; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--surface); border-radius: 16px; width: 100%; max-width: 480px; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); animation: modalIn 0.2s ease; }
+@keyframes modalIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; border-bottom: 1px solid var(--border); }
+.modal-header h3 { font-size: 16px; font-weight: 600; }
+.modal-close { width: 30px; height: 30px; border-radius: 8px; border: none; background: var(--surface2); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; color: var(--muted); }
+.modal-close:hover { background: var(--border); }
+.modal-body { padding: 20px 22px; }
+.modal-body .detail-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.modal-body .detail-row:last-child { border-bottom: none; }
+.modal-body .detail-icon { font-size: 18px; flex-shrink: 0; }
+
+.toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+.toast { background: #0d1b2e; color: #fff; padding: 12px 18px; border-radius: 12px; font-size: 14px; font-weight: 500; box-shadow: 0 8px 30px rgba(0,0,0,0.2); pointer-events: all; animation: slideIn 0.25s ease; }
+.toast.success .toast-icon { color: #4ade80; }
+.toast.error .toast-icon { color: #f87171; }
+@keyframes slideIn { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
+
+@media (max-width: 800px) { .settings-grid { grid-template-columns: 1fr; } .check-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); } }
+</style>
+</head>
+<body>
+
+<main class="main">
+  <div class="page-header">
+    <h2>⚙️ Procurement Settings</h2>
+    <button class="btn btn-primary" id="saveSettingsBtn">💾 Save Settings</button>
+  </div>
+  <p class="page-subtitle">Configure which fields are enabled for each procurement category</p>
+
+  <div class="settings-grid">
+    <div class="settings-sidebar">
+      <div class="card">
+        <div class="card-header"><h3>📊 Overview</h3></div>
+        <div class="card-body">
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:12px;text-align:center;">
+              <div style="font-size:24px;font-weight:700;color:var(--accent);font-family:var(--mono);" id="statCategories">0</div>
+              <div style="font-size:11px;color:var(--muted);">Total Categories</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:12px;text-align:center;">
+              <div style="font-size:24px;font-weight:700;color:var(--green);font-family:var(--mono);" id="statConfigured">0</div>
+              <div style="font-size:11px;color:var(--muted);">Categories Configured</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:12px;text-align:center;">
+              <div style="font-size:24px;font-weight:700;color:var(--amber);font-family:var(--mono);" id="statPending">0</div>
+              <div style="font-size:11px;color:var(--muted);">Pending Setup</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h3>📋 Saved Configs</h3></div>
+        <div class="card-body" style="padding:0;">
+          <div id="savedConfigsList" style="max-height:350px;overflow-y:auto;">
+            <div class="empty-state">No configurations yet</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-main">
+      <div class="card">
+        <div class="card-header"><h3>📂 Select Category</h3></div>
+        <div class="card-body">
+          <div class="category-select-wrap">
+            <label>Procurement Category</label>
+            <select id="categorySelect" onchange="onCategorySelect()">
+              <option value="">-- Select a category to configure --</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="formPreviewCard" style="display:none;">
+        <div class="card-header"><h3 id="selectedCategoryTitle">📝 Form Fields</h3></div>
+        <div class="card-body">
+
+          <div class="section-title">📋 General Information</div>
+          <div class="check-grid" id="fieldsChecklist"></div>
+
+          <div class="section-title">🔢 Tracking Numbers</div>
+          <div class="check-grid" id="trackingFieldsChecklist"></div>
+
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h3>📋 Saved Configurations</h3></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Category</th><th>Enabled Fields</th><th>Actions</th></tr></thead>
+            <tbody id="settingsTableBody">
+              <tr><td colspan="3"><div class="empty-state">No configurations saved yet</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div class="modal-overlay" id="viewModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="viewModalTitle">Configuration Details</h3>
+      <button class="modal-close" onclick="closeViewModal()">✕</button>
+    </div>
+    <div class="modal-body" id="viewModalBody"></div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="navbar.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+  if (window.renderPMSNavbar) renderPMSNavbar();
+
+  const SUPABASE_URL = 'https://iharcxdakmyxjpqpcbnb.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloYXJjeGRha215eGpwcXBjYm5iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0ODc0NDEsImV4cCI6MjA5NDA2MzQ0MX0.5BE8ckW-3g5mJmXyrDWO_cytfI-_JrMaV4LQip7pbvs';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  let categories = [];
+  let settings = [];
+  let selectedCategoryId = null;
+
+  const GENERAL_FIELDS = [
+    { key: 'event', label: 'Event (Event ID)', icon: '📅' },
+    { key: 'date', label: 'Date', icon: '📆' },
+    { key: 'quarter', label: 'Quarter', icon: '📊' },
+    { key: 'menu', label: 'Menu', icon: '📋' },
+    { key: 'unit_pax', label: 'Unit / Pax', icon: '👥' },
+    { key: 'description', label: 'Description', icon: '📝' },
+    { key: 'quantity', label: 'Quantity', icon: '🔢' },
+    { key: 'price', label: 'Price', icon: '💰' },
+    { key: 'item', label: 'Item (Item ID)', icon: '📦' },
+    { key: 'supplier', label: 'Supplier / Vendor', icon: '🏢' },
+    { key: 'mode_of_payment', label: 'Mode of Payment', icon: '💳' },
+    { key: 'scope_of_work', label: 'Scope of Work', icon: '🔧' },
+    { key: 'bid_doc_status', label: 'Bid Doc Status', icon: '📄' },
+    { key: 'remarks', label: 'Remarks', icon: '💬' },
+    { key: 'time', label: 'Time', icon: '⏰' },
+  ];
+
+  const TRACKING_FIELDS = [
+    { key: 'pr_number', label: 'PR No.', icon: '📋' },
+    { key: 'nc_number', label: 'NC No.', icon: '📋' },
+    { key: 'po_number', label: 'PO No.', icon: '📋' },
+    { key: 'padmo_number', label: 'PADMO No.', icon: '📋' },
+    { key: 'go_finance_number', label: 'G.O Finance No.', icon: '💰' },
+  ];
+
+  const ALL_FIELDS = GENERAL_FIELDS.concat(TRACKING_FIELDS);
+
+  function toast(msg, type) {
+    type = type || 'success';
+    var d = document.createElement('div');
+    d.className = 'toast ' + type;
+    d.innerHTML = '<span class="toast-icon">' + (type === 'success' ? '✓' : '✕') + '</span><span>' + msg + '</span>';
+    document.getElementById('toastContainer').appendChild(d);
+    setTimeout(function() { d.remove(); }, 3000);
+  }
+
+  async function loadCategories() {
+    try {
+      var res = await sb.from('procurement_categories').select('*').order('name', { ascending: true });
+      if (res.error) throw res.error;
+      categories = res.data || [];
+      populateCategoryDropdown();
+      updateStats();
+    } catch (e) { console.error(e); }
+  }
+
+  async function loadSettings() {
+    try {
+      var res = await sb.from('procurement_field_settings').select('*, procurement_categories(name)').order('created_at', { ascending: false });
+      if (res.error) throw res.error;
+      settings = res.data || [];
+      renderSettingsTable();
+      renderSavedConfigsList();
+      updateStats();
+    } catch (e) { console.error(e); }
+  }
+
+  function populateCategoryDropdown() {
+    var select = document.getElementById('categorySelect');
+    select.innerHTML = '<option value="">-- Select a category to configure --</option>';
+    categories.forEach(function(cat) {
+      select.innerHTML += '<option value="' + cat.id + '">' + esc(cat.name) + '</option>';
+    });
+  }
+
+  function updateStats() {
+    document.getElementById('statCategories').textContent = categories.length;
+    var configuredIds = settings.map(function(s) { return s.category_id; });
+    var configuredCount = new Set(configuredIds).size;
+    document.getElementById('statConfigured').textContent = configuredCount;
+    document.getElementById('statPending').textContent = categories.length - configuredCount;
+  }
+
+  window.onCategorySelect = function() {
+    var id = document.getElementById('categorySelect').value;
+    if (!id) {
+      document.getElementById('formPreviewCard').style.display = 'none';
+      selectedCategoryId = null;
+      return;
+    }
+    selectedCategoryId = id;
+    var cat = categories.find(function(c) { return c.id === id; });
+    document.getElementById('selectedCategoryTitle').textContent = cat ? '📝 Form Fields: ' + cat.name : '📝 Form Fields';
+    document.getElementById('formPreviewCard').style.display = 'block';
+    
+    var existing = settings.find(function(s) { return s.category_id === id; });
+    var existingFields = existing ? (existing.enabled_fields || []) : [];
+    renderFieldsChecklist(existingFields);
+    renderTrackingChecklist(existingFields);
+  };
+
+  function renderFieldsChecklist(existingFields) {
+    var container = document.getElementById('fieldsChecklist');
+    container.innerHTML = GENERAL_FIELDS.map(function(field) {
+      var isChecked = existingFields.indexOf(field.key) !== -1;
+      return '<label class="check-item' + (isChecked ? ' checked' : '') + '">' +
+        '<input type="checkbox" value="' + field.key + '" ' + (isChecked ? 'checked' : '') + ' onchange="this.parentElement.classList.toggle(\'checked\', this.checked)" />' +
+        '<span>' + field.icon + ' ' + field.label + '</span>' +
+      '</label>';
+    }).join('');
+  }
+
+  function renderTrackingChecklist(existingFields) {
+    var container = document.getElementById('trackingFieldsChecklist');
+    container.innerHTML = TRACKING_FIELDS.map(function(field) {
+      var isChecked = existingFields.indexOf(field.key) !== -1;
+      return '<label class="check-item' + (isChecked ? ' checked' : '') + '">' +
+        '<input type="checkbox" value="' + field.key + '" ' + (isChecked ? 'checked' : '') + ' onchange="this.parentElement.classList.toggle(\'checked\', this.checked)" />' +
+        '<span>' + field.icon + ' ' + field.label + '</span>' +
+      '</label>';
+    }).join('');
+  }
+
+  function getCheckedFields() {
+    var checkboxes = document.querySelectorAll('#fieldsChecklist input[type="checkbox"]:checked, #trackingFieldsChecklist input[type="checkbox"]:checked');
+    return Array.from(checkboxes).map(function(cb) { return cb.value; });
+  }
+
+  document.getElementById('saveSettingsBtn').addEventListener('click', async function() {
+    if (!selectedCategoryId) { toast('Please select a category first', 'error'); return; }
+    
+    var enabledFields = getCheckedFields();
+    if (!enabledFields.length) { toast('Please select at least one field', 'error'); return; }
+
+    try {
+      var existing = settings.find(function(s) { return s.category_id === selectedCategoryId; });
+      var res;
+      
+      if (existing) {
+        res = await sb.from('procurement_field_settings').update({ enabled_fields: enabledFields }).eq('id', existing.id).select('*, procurement_categories(name)');
+        if (res.error) throw res.error;
+        var idx = settings.findIndex(function(s) { return s.id === existing.id; });
+        if (idx !== -1) { settings[idx] = res.data[0]; }
+        toast('Settings updated ✓');
+      } else {
+        res = await sb.from('procurement_field_settings').insert([{ category_id: selectedCategoryId, enabled_fields: enabledFields }]).select('*, procurement_categories(name)');
+        if (res.error) throw res.error;
+        if (res.data && res.data.length > 0) { settings.unshift(res.data[0]); }
+        toast('Settings saved ✓');
+      }
+      
+      renderSettingsTable();
+      renderSavedConfigsList();
+      updateStats();
+    } catch (err) {
+      toast('Error: ' + (err.message || 'Failed to save'), 'error');
+    }
+  });
+
+  function renderSettingsTable() {
+    var tbody = document.getElementById('settingsTableBody');
+    if (!settings.length) {
+      tbody.innerHTML = '<tr><td colspan="3"><div class="empty-state">No configurations saved yet</div></td></tr>';
+      return;
+    }
+    
+    tbody.innerHTML = settings.map(function(s) {
+      var catName = s.procurement_categories ? s.procurement_categories.name : '—';
+      var fields = (s.enabled_fields || []).map(function(f) {
+        var field = ALL_FIELDS.find(function(af) { return af.key === f; });
+        return field ? field.label : f;
+      });
+      return '<tr>' +
+        '<td><strong>' + esc(catName) + '</strong></td>' +
+        '<td><div class="field-tags">' + fields.map(function(f) { return '<span class="field-tag">' + esc(f) + '</span>'; }).join(' ') + '</div></td>' +
+        '<td class="td-actions">' +
+          '<button class="btn btn-secondary btn-sm" onclick="viewSettings(\'' + s.id + '\')">👁️ View</button>' +
+          '<button class="btn btn-secondary btn-sm" onclick="editSettings(\'' + s.id + '\')">✏️ Edit</button>' +
+          '<button class="btn btn-danger btn-sm" onclick="deleteSettings(\'' + s.id + '\')">🗑️ Delete</button>' +
+        '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  function renderSavedConfigsList() {
+    var container = document.getElementById('savedConfigsList');
+    if (!settings.length) {
+      container.innerHTML = '<div class="empty-state">No configurations yet</div>';
+      return;
+    }
+    container.innerHTML = settings.map(function(s) {
+      var catName = s.procurement_categories ? s.procurement_categories.name : '—';
+      return '<div style="padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer;" onclick="editSettings(\'' + s.id + '\')">' +
+        '<strong style="font-size:12px;">' + esc(catName) + '</strong>' +
+        '<div style="font-size:10px;color:var(--muted);">' + (s.enabled_fields || []).length + ' fields</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  window.viewSettings = function(id) {
+    var s = settings.find(function(x) { return x.id === id; });
+    if (!s) return;
+    var catName = s.procurement_categories ? s.procurement_categories.name : 'Unknown';
+    var fields = (s.enabled_fields || []).map(function(f) {
+      var field = ALL_FIELDS.find(function(af) { return af.key === f; });
+      return field ? '<div class="detail-row"><span class="detail-icon">' + field.icon + '</span><span>' + field.label + '</span></div>' : '';
+    }).join('');
+    
+    document.getElementById('viewModalTitle').textContent = 'Configuration: ' + catName;
+    document.getElementById('viewModalBody').innerHTML = fields || '<p style="color:var(--muted);">No fields configured</p>';
+    document.getElementById('viewModal').classList.add('open');
+  };
+
+  window.closeViewModal = function() { document.getElementById('viewModal').classList.remove('open'); };
+
+  window.editSettings = function(id) {
+    var s = settings.find(function(x) { return x.id === id; });
+    if (!s) return;
+    document.getElementById('categorySelect').value = s.category_id;
+    onCategorySelect();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  window.deleteSettings = async function(id) {
+    if (!confirm('Delete this configuration?')) return;
+    try {
+      var res = await sb.from('procurement_field_settings').delete().eq('id', id);
+      if (res.error) throw res.error;
+      settings = settings.filter(function(x) { return x.id !== id; });
+      renderSettingsTable();
+      renderSavedConfigsList();
+      updateStats();
+      toast('Configuration deleted');
+    } catch (e) { toast('Delete failed: ' + (e.message || 'Error'), 'error'); }
+  };
+
+  document.getElementById('viewModal').addEventListener('click', function(e) { if (e.target === this) closeViewModal(); });
+
+  function esc(str) { if (!str) return ''; return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  loadCategories();
+  loadSettings();
+});
+</script>
+</body>
+</html>

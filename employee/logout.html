@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+<title>Logout | BEPO-PESO</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --bg: #0d0f14;
+  --bg2: #14171f;
+  --bg3: #1c2030;
+  --line: rgba(255,255,255,0.08);
+  --text: #e8eaf0;
+  --text2: #b0b5c0;
+  --muted: rgba(232,234,240,0.5);
+  --accent: #3b6ef5;
+  --accent-hover: #2d5ee0;
+  --gold: #f59e0b;
+  --danger: #ef4444;
+  --danger-hover: #dc2626;
+  --danger-bg: rgba(239,68,68,0.08);
+  --danger-border: rgba(239,68,68,0.2);
+  --success: #4ade80;
+  --font: 'DM Sans', system-ui, sans-serif;
+  --mono: 'DM Mono', monospace;
+  --display: 'Playfair Display', Georgia, serif;
+  --ease: cubic-bezier(0.4,0,0.2,1);
+  --r: 16px;
+  --rsm: 10px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.logout-wrapper { width: 100%; max-width: 480px; animation: fadeUp 0.4s var(--ease) both; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+.logout-card { background: var(--bg2); border: 1px solid var(--line); border-radius: 24px; padding: 40px 32px 36px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); text-align: center; }
+.profile-section { margin-bottom: 28px; }
+.profile-avatar { width: 88px; height: 88px; border-radius: 50%; background: var(--bg3); border: 3px solid var(--gold); display: flex; align-items: center; justify-content: center; overflow: hidden; margin: 0 auto 16px; background-size: cover; background-position: center; }
+.profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.profile-avatar .fallback { font-size: 36px; color: var(--gold); }
+.profile-name { font-family: var(--display); font-size: 20px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; margin-bottom: 4px; }
+.profile-id { font-family: var(--mono); font-size: 12px; color: var(--accent); background: rgba(59,110,245,0.12); display: inline-block; padding: 4px 12px; border-radius: 20px; }
+.warning-icon { width: 64px; height: 64px; border-radius: 50%; background: var(--danger-bg); border: 2px solid var(--danger-border); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; }
+.warning-icon svg { width: 28px; height: 28px; stroke: var(--danger); stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.logout-title { font-family: var(--display); font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.logout-message { font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 32px; }
+.btn-group { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 28px; border-radius: 12px; font-family: var(--font); font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s var(--ease); border: 1px solid transparent; text-decoration: none; white-space: nowrap; min-width: 140px; }
+.btn svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2.2; fill: none; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+.btn-cancel { background: var(--bg3); color: var(--text2); border-color: var(--line); }
+.btn-cancel:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.15); color: var(--text); transform: translateY(-1px); }
+.btn-logout { background: var(--danger); color: #fff; border-color: var(--danger); }
+.btn-logout:hover { background: var(--danger-hover); border-color: var(--danger-hover); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(239,68,68,0.3); }
+.btn-logout:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+.spinner-sm { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; display: none; }
+.btn-logout.loading .btn-text { display: none; }
+.btn-logout.loading .spinner-sm { display: block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-state { text-align: center; padding: 40px 20px; color: var(--muted); }
+.spinner-lg { width: 48px; height: 48px; border: 3px solid var(--line); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+@media (max-width: 480px) { .logout-card { padding: 28px 20px 28px; } .btn-group { flex-direction: column; } .btn { width: 100%; } }
+</style>
+</head>
+<body>
+
+<div class="logout-wrapper">
+  <div class="logout-card" id="logoutCard">
+    <div class="loading-state" id="loadingState">
+      <div class="spinner-lg"></div>
+      <p>Loading your profile…</p>
+    </div>
+
+    <div id="logoutContent" style="display:none;">
+      <div class="profile-section">
+        <div class="profile-avatar" id="profileAvatar">
+          <span class="fallback">👤</span>
+        </div>
+        <div class="profile-name" id="displayFullname">—</div>
+        <div class="profile-id" id="displayIdNumber">—</div>
+      </div>
+
+      <div class="warning-icon">
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </div>
+
+      <div class="logout-title">Sign Out of BEPO-PESO</div>
+      <div class="logout-message">Are you sure you want to sign out of the Procurement Management System? You will be redirected to the login page.</div>
+
+      <div class="btn-group">
+        <a href="index.html" class="btn btn-cancel">
+          <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Cancel
+        </a>
+        <button class="btn btn-logout" id="logoutBtn">
+          <span class="btn-text" style="display:flex;align-items:center;gap:8px;">
+            <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Sign Out
+          </span>
+          <div class="spinner-sm"></div>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="navbar.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+  if (window.renderAdminNavbar) renderAdminNavbar();
+
+  const SUPABASE_URL = 'https://iharcxdakmyxjpqpcbnb.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloYXJjeGRha215eGpwcXBjYm5iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0ODc0NDEsImV4cCI6MjA5NDA2MzQ0MX0.5BE8ckW-3g5mJmXyrDWO_cytfI-_JrMaV4LQip7pbvs';
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const userId = sessionStorage.getItem('bepo_user_id');
+  const userName = sessionStorage.getItem('bepo_user_name');
+  const idNumber = sessionStorage.getItem('bepo_id_number');
+
+  async function loadProfile() {
+    if (!userId || !idNumber) {
+      document.getElementById('loadingState').innerHTML = '<p style="color:var(--danger);">No active session found</p>';
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.from('members').select('fullname, id_number, profile_image').eq('id_number', idNumber).single();
+      if (error || !data) throw new Error('Member not found');
+
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('logoutContent').style.display = 'block';
+
+      document.getElementById('displayFullname').textContent = data.fullname || userName || 'Member';
+      document.getElementById('displayIdNumber').textContent = data.id_number || idNumber;
+
+      if (data.profile_image && (data.profile_image.startsWith('data:image') || data.profile_image.startsWith('http'))) {
+        document.getElementById('profileAvatar').innerHTML = `<img src="${data.profile_image}" alt="Profile">`;
+      }
+    } catch (err) {
+      document.getElementById('loadingState').innerHTML = '<p style="color:var(--danger);">Failed to load profile</p>';
+    }
+  }
+
+  document.getElementById('logoutBtn').addEventListener('click', function () {
+    const btn = this;
+    btn.classList.add('loading');
+    btn.disabled = true;
+
+    setTimeout(function () {
+      sessionStorage.clear();
+      localStorage.removeItem('bepo_remember_id');
+      window.location.href = '../login.html';
+    }, 1200);
+  });
+
+  loadProfile();
+});
+</script>
+</body>
+</html>

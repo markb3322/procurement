@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+<title>Manage Items | BEPO-PESO</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --bg: #f0f2f7;
+  --surface: #ffffff;
+  --surface2: #f7f9fc;
+  --border: #e2e8f0;
+  --text: #0d1b2e;
+  --text2: #4a5a6e;
+  --muted: #8a97a8;
+  --accent: #1a56db;
+  --accent-dark: #1345b7;
+  --accent-light: #ebf0ff;
+  --green: #0d7e4b;
+  --green-bg: #e6f5ec;
+  --red: #dc2626;
+  --red-bg: #fdecea;
+  --font: 'DM Sans', system-ui, sans-serif;
+  --mono: 'DM Mono', monospace;
+  --radius: 14px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 3px rgba(13,27,46,0.06), 0 8px 24px rgba(13,27,46,0.07);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; font-size: 15px; line-height: 1.6; }
+.main { padding: 28px 32px 40px; max-width: 1200px; margin: 0 auto; animation: fadeUp 0.4s ease both; width: 100%; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+.page-header h2 { font-size: 22px; font-weight: 700; color: var(--text); letter-spacing: -0.4px; display: flex; align-items: center; gap: 8px; }
+
+.filter-bar { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+.filter-bar label { font-size: 13px; font-weight: 600; color: var(--text2); white-space: nowrap; }
+.filter-bar select { padding: 8px 14px; border: 1.5px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font-size: 13px; font-family: var(--font); cursor: pointer; outline: none; }
+.filter-bar select:focus { border-color: var(--accent); }
+.filter-bar .badge-count { font-size: 12px; color: var(--accent); background: var(--accent-light); padding: 5px 12px; border-radius: 20px; font-weight: 600; margin-left: auto; }
+
+.btn { display: inline-flex; align-items: center; gap: 7px; border: none; border-radius: 10px; padding: 9px 18px; font-size: 13.5px; font-weight: 600; font-family: var(--font); cursor: pointer; transition: all 0.14s ease; white-space: nowrap; text-decoration: none; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-dark); transform: translateY(-1px); }
+.btn-secondary { background: var(--surface); color: var(--text2); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--surface2); }
+.btn-danger { background: var(--red-bg); color: var(--red); border: 1px solid transparent; }
+.btn-danger:hover { background: #fce4e4; border-color: var(--red); }
+.btn-sm { padding: 5px 10px; font-size: 12px; border-radius: 6px; }
+
+.table-card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); overflow: hidden; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead { background: var(--surface2); border-bottom: 2px solid var(--border); }
+th { padding: 10px 14px; text-align: left; font-size: 10.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+tbody tr:hover { background: var(--accent-light); }
+.td-actions { display: flex; gap: 6px; }
+.td-price { font-family: var(--mono); font-weight: 600; color: var(--accent-dark); }
+.empty-state { text-align: center; padding: 40px; color: var(--muted); }
+
+/* Modal - Full screen on mobile, centered on desktop */
+.modal-overlay { position: fixed; inset: 0; background: rgba(13,27,46,0.5); backdrop-filter: blur(4px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.modal-overlay.hidden { display: none; }
+.modal { background: var(--surface); border-radius: 20px; width: 100%; max-width: 550px; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 25px 60px rgba(0,0,0,0.3); animation: modalIn 0.25s ease; }
+@keyframes modalIn { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.modal-header h3 { font-size: 17px; font-weight: 700; color: var(--text); }
+.modal-close { width: 34px; height: 34px; border-radius: 50%; border: none; background: var(--surface2); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; color: var(--muted); transition: all 0.15s; }
+.modal-close:hover { background: var(--red-bg); color: var(--red); }
+.modal-body { padding: 22px 24px; overflow-y: auto; flex: 1; }
+.modal-body label { display: block; font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 5px; margin-top: 14px; }
+.modal-body label:first-child { margin-top: 0; }
+.modal-body input, .modal-body select, .modal-body textarea { width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 14px; font-family: var(--font); outline: none; background: var(--surface2); transition: border-color 0.15s; }
+.modal-body input:focus, .modal-body select:focus, .modal-body textarea:focus { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px var(--accent-light); }
+.modal-body textarea { resize: vertical; min-height: 70px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; padding: 16px 24px; border-top: 1px solid var(--border); flex-shrink: 0; background: var(--surface2); border-radius: 0 0 20px 20px; }
+
+.toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+.toast { background: #0d1b2e; color: #fff; padding: 12px 18px; border-radius: 12px; font-size: 14px; font-weight: 500; box-shadow: 0 8px 30px rgba(0,0,0,0.2); pointer-events: all; animation: slideIn 0.25s ease; }
+.toast.success .toast-icon { color: #4ade80; }
+.toast.error .toast-icon { color: #f87171; }
+@keyframes slideIn { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
+
+@media (max-width: 700px) { 
+  .main { padding: 16px 14px 32px; } 
+  .form-row { grid-template-columns: 1fr; }
+  .modal { max-width: 95%; max-height: 90vh; }
+}
+</style>
+</head>
+<body>
+
+<main class="main">
+  <div class="page-header">
+    <h2>📋 Manage Your Items</h2>
+    <button class="btn btn-primary" id="addItemBtn">+ Add Item</button>
+  </div>
+
+  <div class="filter-bar">
+    <label>Month:</label>
+    <select id="filterMonth" onchange="applyFilters()">
+      <option value="">All Months</option>
+      <option value="0">January</option><option value="1">February</option><option value="2">March</option>
+      <option value="3">April</option><option value="4">May</option><option value="5">June</option>
+      <option value="6">July</option><option value="7">August</option><option value="8">September</option>
+      <option value="9">October</option><option value="10">November</option><option value="11">December</option>
+    </select>
+    <label>Category:</label>
+    <select id="filterCategory" onchange="applyFilters()">
+      <option value="">All Categories</option>
+    </select>
+    <span class="badge-count" id="countBadge">0 items</span>
+  </div>
+
+  <div class="table-card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Item Name</th>
+            <th>Category</th>
+            <th>Unit</th>
+            <th>Qty</th>
+            <th>Brand</th>
+            <th>Price</th>
+            <th>Description</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr><td colspan="9"><div class="empty-state">Loading items…</div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<!-- Add/Edit Modal -->
+<div class="modal-overlay hidden" id="itemModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">Add Item</h3>
+      <button class="modal-close" onclick="closeItemModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="itemId" />
+      
+      <label>Category *</label>
+      <select id="itemCategory" required></select>
+
+      <label>Item Name *</label>
+      <input type="text" id="itemName" placeholder="Enter item name" required />
+
+      <div class="form-row">
+        <div>
+          <label>Quantity *</label>
+          <input type="number" id="itemQty" min="1" step="1" placeholder="0" required />
+        </div>
+        <div>
+          <label>Unit *</label>
+          <input type="text" id="itemUnit" placeholder="e.g., pcs, box, set" required />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div>
+          <label>Price (₱) *</label>
+          <input type="number" id="itemPrice" min="0" step="0.01" placeholder="0.00" required />
+        </div>
+        <div>
+          <label>Brand</label>
+          <input type="text" id="itemBrand" placeholder="Brand name" />
+        </div>
+      </div>
+
+      <label>Description</label>
+      <textarea id="itemDescription" placeholder="Item description…" rows="3"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeItemModal()">Cancel</button>
+      <button class="btn btn-primary" id="saveItemBtn">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="navbar.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+  if (window.renderPMSNavbar) renderPMSNavbar();
+
+  const SUPABASE_URL = 'https://iharcxdakmyxjpqpcbnb.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloYXJjeGRha215eGpwcXBjYm5iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0ODc0NDEsImV4cCI6MjA5NDA2MzQ0MX0.5BE8ckW-3g5mJmXyrDWO_cytfI-_JrMaV4LQip7pbvs';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  let items = [];
+  let categories = [];
+
+  function toast(msg, type) {
+    type = type || 'success';
+    var d = document.createElement('div');
+    d.className = 'toast ' + type;
+    d.innerHTML = '<span class="toast-icon">' + (type === 'success' ? '✓' : '✕') + '</span><span>' + msg + '</span>';
+    document.getElementById('toastContainer').appendChild(d);
+    setTimeout(function() { d.remove(); }, 3000);
+  }
+
+  async function loadCategories() {
+    try {
+      var res = await sb.from('procurement_categories').select('*').order('name', { ascending: true });
+      if (res.error) throw res.error;
+      categories = res.data || [];
+      
+      var filterCat = document.getElementById('filterCategory');
+      filterCat.innerHTML = '<option value="">All Categories</option>';
+      categories.forEach(function(cat) {
+        filterCat.innerHTML += '<option value="' + cat.id + '">' + esc(cat.name) + '</option>';
+      });
+      
+      var modalCat = document.getElementById('itemCategory');
+      modalCat.innerHTML = '<option value="">Select Category</option>';
+      categories.forEach(function(cat) {
+        modalCat.innerHTML += '<option value="' + cat.id + '">' + esc(cat.name) + '</option>';
+      });
+    } catch (e) { console.error('Failed to load categories', e); }
+  }
+
+  async function loadItems() {
+    try {
+      var res = await sb.from('procurement_items').select('*, procurement_categories(name)').order('created_at', { ascending: false });
+      if (res.error) throw res.error;
+      items = res.data || [];
+      applyFilters();
+    } catch (e) {
+      document.getElementById('tableBody').innerHTML = '<tr><td colspan="9"><div class="empty-state">Failed to load items</div></td></tr>';
+    }
+  }
+
+  function applyFilters() {
+    var monthVal = document.getElementById('filterMonth').value;
+    var catVal = document.getElementById('filterCategory').value;
+    
+    var filtered = items.slice();
+    
+    if (monthVal !== '') {
+      var monthNum = parseInt(monthVal);
+      filtered = filtered.filter(function(item) {
+        if (!item.created_at) return false;
+        return new Date(item.created_at).getMonth() === monthNum;
+      });
+    }
+    
+    if (catVal !== '') {
+      filtered = filtered.filter(function(item) {
+        return item.category_id === catVal;
+      });
+    }
+    
+    renderTable(filtered);
+  }
+  window.applyFilters = applyFilters;
+
+  function renderTable(filtered) {
+    var tbody = document.getElementById('tableBody');
+    document.getElementById('countBadge').textContent = filtered.length + ' item' + (filtered.length !== 1 ? 's' : '');
+    
+    if (!filtered.length) {
+      tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state">No items found</div></td></tr>';
+      return;
+    }
+    
+    tbody.innerHTML = filtered.map(function(item, i) {
+      var catName = item.procurement_categories ? item.procurement_categories.name : '—';
+      var shortId = (item.id || '').substring(0, 8);
+      return '<tr>' +
+        '<td style="font-family:var(--mono);font-size:11px;color:var(--muted);">' + shortId + '</td>' +
+        '<td><strong>' + esc(item.item_name || '—') + '</strong></td>' +
+        '<td>' + esc(catName) + '</td>' +
+        '<td>' + esc(item.unit || '—') + '</td>' +
+        '<td>' + (item.quantity || 0) + '</td>' +
+        '<td>' + esc(item.brand || '—') + '</td>' +
+        '<td class="td-price">₱' + (item.price ? Number(item.price).toFixed(2) : '0.00') + '</td>' +
+        '<td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + esc(item.description || '') + '">' + esc(item.description || '—') + '</td>' +
+        '<td class="td-actions">' +
+          '<button class="btn btn-secondary btn-sm" onclick="editItem(\'' + item.id + '\')">✏️</button>' +
+          '<button class="btn btn-danger btn-sm" onclick="deleteItem(\'' + item.id + '\')">🗑️</button>' +
+        '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  function esc(str) { if (!str) return ''; return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  document.getElementById('addItemBtn').addEventListener('click', function() {
+    document.getElementById('modalTitle').textContent = 'Add Item';
+    document.getElementById('itemId').value = '';
+    document.getElementById('itemCategory').value = '';
+    document.getElementById('itemName').value = '';
+    document.getElementById('itemQty').value = '';
+    document.getElementById('itemUnit').value = '';
+    document.getElementById('itemPrice').value = '';
+    document.getElementById('itemBrand').value = '';
+    document.getElementById('itemDescription').value = '';
+    document.getElementById('itemModal').classList.remove('hidden');
+    document.getElementById('itemName').focus();
+  });
+
+  window.editItem = function(id) {
+    var item = items.find(function(x) { return x.id === id; });
+    if (!item) return;
+    document.getElementById('modalTitle').textContent = 'Edit Item';
+    document.getElementById('itemId').value = item.id;
+    document.getElementById('itemCategory').value = item.category_id || '';
+    document.getElementById('itemName').value = item.item_name || '';
+    document.getElementById('itemQty').value = item.quantity || '';
+    document.getElementById('itemUnit').value = item.unit || '';
+    document.getElementById('itemPrice').value = item.price || '';
+    document.getElementById('itemBrand').value = item.brand || '';
+    document.getElementById('itemDescription').value = item.description || '';
+    document.getElementById('itemModal').classList.remove('hidden');
+  };
+
+  window.closeItemModal = function() {
+    document.getElementById('itemModal').classList.add('hidden');
+  };
+
+  document.getElementById('saveItemBtn').addEventListener('click', async function() {
+    var id = document.getElementById('itemId').value;
+    var payload = {
+      category_id: document.getElementById('itemCategory').value,
+      item_name: document.getElementById('itemName').value.trim(),
+      quantity: parseInt(document.getElementById('itemQty').value) || 0,
+      unit: document.getElementById('itemUnit').value.trim(),
+      price: parseFloat(document.getElementById('itemPrice').value) || 0,
+      brand: document.getElementById('itemBrand').value.trim() || null,
+      description: document.getElementById('itemDescription').value.trim() || null
+    };
+
+    if (!payload.category_id || !payload.item_name || !payload.unit) {
+      toast('Please fill all required fields', 'error'); return;
+    }
+
+    try {
+      var res;
+      if (id) {
+        res = await sb.from('procurement_items').update(payload).eq('id', id).select('*, procurement_categories(name)');
+        if (res.error) throw res.error;
+        var idx = items.findIndex(function(x) { return x.id === id; });
+        if (idx !== -1) { items[idx] = res.data[0]; }
+        toast('Item updated ✓');
+      } else {
+        res = await sb.from('procurement_items').insert([payload]).select('*, procurement_categories(name)');
+        if (res.error) throw res.error;
+        if (res.data && res.data.length > 0) { items.unshift(res.data[0]); }
+        toast('Item created ✓');
+      }
+      closeItemModal();
+      applyFilters();
+    } catch (err) {
+      toast('Error: ' + (err.message || 'Failed to save'), 'error');
+    }
+  });
+
+  window.deleteItem = async function(id) {
+    if (!confirm('Delete this item?')) return;
+    try {
+      var res = await sb.from('procurement_items').delete().eq('id', id);
+      if (res.error) throw res.error;
+      items = items.filter(function(x) { return x.id !== id; });
+      applyFilters();
+      toast('Item deleted');
+    } catch (e) {
+      toast('Delete failed: ' + (e.message || 'Error'), 'error');
+    }
+  };
+
+  document.getElementById('itemModal').addEventListener('click', function(e) {
+    if (e.target === this) closeItemModal();
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && !document.getElementById('itemModal').classList.contains('hidden')) {
+      closeItemModal();
+    }
+  });
+
+  loadCategories();
+  loadItems();
+});
+</script>
+</body>
+</html>

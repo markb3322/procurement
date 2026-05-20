@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+<title>Reports | BEPO-PESO</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --bg: #0d0f14;
+  --bg2: #14171f;
+  --bg3: #1c2030;
+  --line: rgba(255,255,255,0.06);
+  --text: #e8eaf0;
+  --text2: #b0b5c0;
+  --muted: rgba(232,234,240,0.5);
+  --accent: #3b6ef5;
+  --accent-g: rgba(59,110,245,0.15);
+  --gold: #f59e0b;
+  --gold-g: rgba(245,158,11,0.12);
+  --font: 'DM Sans', system-ui, sans-serif;
+  --mono: 'DM Mono', monospace;
+  --display: 'Playfair Display', Georgia, serif;
+  --ease: cubic-bezier(0.4,0,0.2,1);
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.construction-wrapper { width: 100%; max-width: 700px; animation: fadeUp 0.6s var(--ease) both; text-align: center; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+
+.construction-icon { font-size: 72px; margin-bottom: 24px; animation: bounce 2s ease-in-out infinite; display: inline-block; }
+@keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-16px); } }
+
+.construction-card { background: var(--bg2); border: 1px solid var(--line); border-radius: 24px; padding: 48px 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); position: relative; overflow: hidden; }
+.construction-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+.construction-card::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--accent), transparent); }
+
+.construction-badge { display: inline-flex; align-items: center; gap: 8px; padding: 6px 16px; background: var(--gold-g); border: 1px solid rgba(245,158,11,0.2); border-radius: 40px; font-size: 11px; font-weight: 600; color: var(--gold); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 28px; font-family: var(--mono); }
+.construction-badge .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gold); animation: pulse 1.5s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.4); } }
+
+.construction-title { font-family: var(--display); font-size: 32px; font-weight: 700; color: var(--text); letter-spacing: -0.5px; margin-bottom: 10px; }
+.construction-subtitle { font-size: 14px; color: var(--muted); margin-bottom: 36px; line-height: 1.6; }
+
+.paragraphs { display: flex; flex-direction: column; gap: 20px; text-align: left; margin-bottom: 36px; }
+.paragraph-card { background: var(--bg3); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 20px 22px; transition: border-color 0.3s; }
+.paragraph-card:hover { border-color: rgba(245,158,11,0.25); }
+.paragraph-card .p-icon { font-size: 24px; margin-bottom: 8px; }
+.paragraph-card h4 { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 6px; letter-spacing: -0.2px; }
+.paragraph-card p { font-size: 12.5px; color: var(--muted); line-height: 1.8; }
+
+.status-bar { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px 20px; background: rgba(59,110,245,0.06); border: 1px solid rgba(59,110,245,0.15); border-radius: 40px; }
+.status-bar .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); animation: pulse 1.5s ease-in-out infinite; flex-shrink: 0; }
+.status-bar span { font-size: 12px; color: var(--accent); font-weight: 500; font-family: var(--mono); letter-spacing: 0.3px; }
+
+.footer-note { margin-top: 24px; font-size: 10px; color: var(--muted); font-family: var(--mono); letter-spacing: 0.2px; opacity: 0.6; }
+
+@media (max-width: 500px) { 
+  .construction-card { padding: 32px 20px; } 
+  .construction-title { font-size: 24px; }
+}
+</style>
+</head>
+<body>
+
+<div class="construction-wrapper">
+  <div class="construction-card">
+    <div class="construction-badge">
+      <span class="dot"></span>
+      Under Construction
+      <span class="dot"></span>
+    </div>
+
+    <div class="construction-icon">🚧</div>
+
+    <div class="construction-title">Reports Module</div>
+    <div class="construction-subtitle">Our development team is actively building this feature to serve you better.</div>
+
+    <div class="paragraphs">
+      <div class="paragraph-card">
+        <div class="p-icon">🔧</div>
+        <h4>System Development in Progress</h4>
+        <p>The BEPO-PESO Procurement Data System Reports module is currently undergoing comprehensive development and rigorous testing. Our engineering team is implementing advanced data aggregation algorithms, dynamic filtering capabilities, and seamless export functionality to ensure that every procurement record, category summary, and financial breakdown is presented with absolute precision and clarity. We are meticulously integrating the dynamic column system that adapts to your configured field settings, ensuring that your reports reflect exactly the data points you have chosen to track across all procurement categories.</p>
+      </div>
+
+      <div class="paragraph-card">
+        <div class="p-icon">📊</div>
+        <h4>Comprehensive Reporting Features Coming Soon</h4>
+        <p>Once completed, this module will provide you with a full suite of reporting tools including monthly procurement summaries, category-based cost analysis, supplier performance tracking, bid status monitoring, and grand total computations that account for both direct pricing and item-level costs. You will be able to export professional, print-ready reports in multiple formats including Microsoft Word with landscape orientation, ensuring your documentation meets the highest standards for government procurement compliance and audit requirements. Every report will be filterable by date range, category, payment mode, and bid status.</p>
+      </div>
+
+      <div class="paragraph-card">
+        <div class="p-icon">✅</div>
+        <h4>Quality Assurance & Deployment Timeline</h4>
+        <p>We are currently in the final phase of quality assurance, conducting thorough validation of all data pipelines, user interface components, and export mechanisms. Our commitment is to deliver a robust, reliable, and user-friendly reporting experience that integrates seamlessly with the existing procurement management workflow. We appreciate your patience and understanding as we complete these final steps. The BEPO-PESO administration will issue an official notification once the Reports module is fully operational and ready for production use. Rest assured, the system is being built to serve the needs of the Province of Bohol with the highest standards of excellence.</p>
+      </div>
+    </div>
+
+    <div class="status-bar">
+      <span class="status-dot"></span>
+      <span>Developer Still Processing · Please Wait Until System Update is Complete</span>
+      <span class="status-dot"></span>
+    </div>
+
+    <div class="footer-note">&copy; 2026 BEPO-PESO · Procurement Data System · Province of Bohol</div>
+  </div>
+</div>
+
+<script src="navbar.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  if (window.renderPMSNavbar) renderPMSNavbar();
+});
+</script>
+</body>
+</html>
