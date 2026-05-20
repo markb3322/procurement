@@ -74,15 +74,90 @@
   --pms-ease: cubic-bezier(0.16, 1, 0.3, 1);
   --pms-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
   --pms-glass: rgba(15, 23, 42, 0.8);
+  --pms-toggle-size: 48px;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
 
+/* ============================================ */
+/* FLOATING TOGGLE BUTTON                        */
+/* ============================================ */
+.pms-toggle-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: var(--pms-toggle-size);
+  height: var(--pms-toggle-size);
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--pms-accent), #a855f7);
+  border: none;
+  cursor: pointer;
+  z-index: 1001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s var(--pms-ease);
+  animation: floatIn 0.5s var(--pms-ease) both;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pms-toggle-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 12px 32px rgba(99, 102, 241, 0.5), 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.pms-toggle-btn:active {
+  transform: scale(0.95);
+}
+
+.pms-toggle-btn svg {
+  width: 22px;
+  height: 22px;
+  stroke: white;
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: all 0.3s var(--pms-ease);
+}
+
+/* Toggle button when navbar is open */
+.pms-toggle-btn.nav-open {
+  background: rgba(239, 68, 68, 0.9);
+  box-shadow: 0 8px 24px rgba(239, 68, 68, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
+  animation: pulse 0.3s var(--pms-ease);
+}
+
+.pms-toggle-btn.nav-open svg {
+  transform: rotate(45deg);
+}
+
+@keyframes floatIn {
+  from { 
+    transform: scale(0); 
+    opacity: 0;
+  }
+  to { 
+    transform: scale(1); 
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+/* ============================================ */
+/* TOPBAR                                       */
+/* ============================================ */
 .pms-topbar {
   position: fixed;
   top: 16px;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-50%) translateY(-150%);
   width: calc(100% - 40px);
   max-width: 1400px;
   height: var(--pms-topbar-h);
@@ -98,7 +173,15 @@
   z-index: 1000;
   font-family: var(--pms-font);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  animation: navbarSlideDown 0.6s var(--pms-ease) both;
+  transition: transform 0.5s var(--pms-ease), opacity 0.4s var(--pms-ease);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pms-topbar.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: all;
 }
 
 @keyframes navbarSlideDown {
@@ -127,7 +210,6 @@
   overflow: hidden;
   background: linear-gradient(135deg, var(--pms-accent), #a855f7);
   padding: 2px;
-  animation: logoFadeIn 0.6s 0.15s var(--pms-ease) both;
 }
 
 .pms-logo-inner {
@@ -162,35 +244,10 @@
   opacity: 0.6;
 }
 
-@keyframes logoFadeIn {
-  from { 
-    transform: scale(0.5) rotate(-15deg); 
-    opacity: 0; 
-    filter: blur(10px);
-  }
-  to { 
-    transform: scale(1) rotate(0deg); 
-    opacity: 1;
-    filter: blur(0);
-  }
-}
-
 .pms-brand { 
   display: flex; 
   flex-direction: column; 
   line-height: 1.2; 
-  animation: fadeRight 0.5s 0.25s var(--pms-ease) both;
-}
-
-@keyframes fadeRight {
-  from { 
-    transform: translateX(-20px); 
-    opacity: 0; 
-  }
-  to { 
-    transform: translateX(0); 
-    opacity: 1; 
-  }
 }
 
 .pms-brand-title {
@@ -219,23 +276,11 @@
   padding: 4px;
   border-radius: 14px;
   border: 1px solid var(--pms-border);
-  animation: fadeDown 0.5s 0.35s var(--pms-ease) both;
   overflow-x: auto;
 }
 
 .pms-topbar-center::-webkit-scrollbar {
   height: 0;
-}
-
-@keyframes fadeDown {
-  from { 
-    transform: translateY(-20px); 
-    opacity: 0; 
-  }
-  to { 
-    transform: translateY(0); 
-    opacity: 1; 
-  }
 }
 
 .pms-nav-link {
@@ -287,19 +332,7 @@
   display: flex; 
   align-items: center; 
   gap: 12px;
-  animation: fadeLeft 0.5s 0.45s var(--pms-ease) both;
   flex-shrink: 0;
-}
-
-@keyframes fadeLeft {
-  from { 
-    transform: translateX(20px); 
-    opacity: 0; 
-  }
-  to { 
-    transform: translateX(0); 
-    opacity: 1; 
-  }
 }
 
 /* Settings Button */
@@ -531,18 +564,13 @@
 .pms-content-shift {
   margin-top: calc(var(--pms-topbar-h) + 32px);
   min-height: calc(100vh - var(--pms-topbar-h) - 32px);
-  animation: contentShiftIn 0.5s 0.55s var(--pms-ease) both;
+  transition: margin-top 0.5s var(--pms-ease);
 }
 
-@keyframes contentShiftIn {
-  from { 
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to { 
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* When navbar is hidden, remove content shift */
+body.pms-nav-hidden .pms-content-shift,
+.pms-content-shift.nav-hidden {
+  margin-top: 0 !important;
 }
 
 /* Media Queries */
@@ -602,6 +630,18 @@
   .pms-content-shift { 
     margin-top: 120px;
   }
+  
+  body.pms-nav-hidden .pms-content-shift,
+  .pms-content-shift.nav-hidden {
+    margin-top: 0 !important;
+  }
+  
+  .pms-toggle-btn {
+    bottom: 20px;
+    right: 20px;
+    width: 44px;
+    height: 44px;
+  }
 }
 
 @media (max-width: 600px) {
@@ -646,6 +686,18 @@
     border-radius: 10px;
     padding: 2px 10px 2px 2px;
   }
+  
+  .pms-toggle-btn {
+    bottom: 16px;
+    right: 16px;
+    width: 40px;
+    height: 40px;
+  }
+  
+  .pms-toggle-btn svg {
+    width: 18px;
+    height: 18px;
+  }
 }
 `;
     const style = document.createElement('style');
@@ -660,7 +712,16 @@
     profile: `<svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
     settings: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`,
     chevron: `<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>`,
+    menu: `<svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>`,
+    close: `<svg viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg>`,
   };
+
+  function buildToggleButton() {
+    return `
+<button class="pms-toggle-btn" id="pms-toggle-btn" title="Toggle Navigation" aria-label="Toggle Navigation">
+  ${ICON.menu}
+</button>`;
+  }
 
   function buildNavHTML(userFullname, profileImage) {
     const avatarHtml = profileImage && profileImage !== 'null'
@@ -675,7 +736,7 @@
     `).join('');
 
     return `
-<header class="pms-topbar" role="banner">
+<header class="pms-topbar" role="banner" id="pms-topbar">
   <div class="pms-topbar-left">
     <div class="pms-logo-container">
       <div class="pms-logo-glow"></div>
@@ -754,12 +815,80 @@
     });
   }
 
+  function attachToggleBehavior() {
+    const toggleBtn = document.getElementById('pms-toggle-btn');
+    const topbar = document.getElementById('pms-topbar');
+    if (!toggleBtn || !topbar) return;
+
+    // Check localStorage for saved state
+    const savedState = localStorage.getItem('pms_nav_open');
+    let isOpen = savedState === 'true';
+
+    // Apply initial state
+    if (isOpen) {
+      topbar.classList.add('show');
+      toggleBtn.classList.add('nav-open');
+      toggleBtn.querySelector('svg').outerHTML = ICON.close;
+      updateContentShift(true);
+    } else {
+      updateContentShift(false);
+    }
+
+    toggleBtn.addEventListener('click', function() {
+      isOpen = !isOpen;
+      
+      if (isOpen) {
+        topbar.classList.add('show');
+        toggleBtn.classList.add('nav-open');
+        toggleBtn.querySelector('svg').outerHTML = ICON.close;
+        updateContentShift(true);
+      } else {
+        topbar.classList.remove('show');
+        toggleBtn.classList.remove('nav-open');
+        toggleBtn.querySelector('svg').outerHTML = ICON.menu;
+        updateContentShift(false);
+      }
+
+      // Save state
+      localStorage.setItem('pms_nav_open', isOpen);
+    });
+
+    // Keyboard shortcut: Ctrl + B to toggle
+    document.addEventListener('keydown', function(e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+        e.preventDefault();
+        toggleBtn.click();
+      }
+    });
+  }
+
+  function updateContentShift(navOpen) {
+    if (navOpen) {
+      document.body.classList.remove('pms-nav-hidden');
+      // Remove nav-hidden from all shifted elements
+      document.querySelectorAll('.pms-content-shift').forEach(function(el) {
+        el.classList.remove('nav-hidden');
+      });
+    } else {
+      document.body.classList.add('pms-nav-hidden');
+      // Add nav-hidden to all shifted elements
+      document.querySelectorAll('.pms-content-shift').forEach(function(el) {
+        el.classList.add('nav-hidden');
+      });
+    }
+  }
+
   function shiftContent() {
     const selectors = ['.app-shell', '#app-shell', '.main-content', '#main-content', '.main', '#main', 'main', '.content', '#content', '.dashboard', '.page-content', '#page-content'];
     for (const sel of selectors) {
       const el = document.querySelector(sel);
       if (el) { 
-        el.classList.add('pms-content-shift'); 
+        el.classList.add('pms-content-shift');
+        // Check if navbar is hidden
+        const savedState = localStorage.getItem('pms_nav_open');
+        if (savedState !== 'true') {
+          el.classList.add('nav-hidden');
+        }
         return; 
       }
     }
@@ -827,6 +956,14 @@
     const container = (options && options.containerSelector) ? document.querySelector(options.containerSelector) : document.body;
     if (!container) return;
     
+    // Add toggle button
+    const tmpToggle = document.createElement('div');
+    tmpToggle.innerHTML = buildToggleButton();
+    Array.from(tmpToggle.children).forEach(el => {
+      document.body.appendChild(el);
+    });
+
+    // Add topbar
     const tmp = document.createElement('div');
     tmp.innerHTML = buildNavHTML(defaultName, null);
     
@@ -838,6 +975,7 @@
     shiftContent();
     markActive();
     attachDropdownBehavior();
+    attachToggleBehavior();
     
     fetchProfile().then(profile => { if (profile) updateProfileUI(profile); });
   };
@@ -853,6 +991,12 @@
     }
     sessionStorage.setItem('bepo_user_name', fullname);
     if (idNumber) sessionStorage.setItem('bepo_id_number', idNumber);
+  };
+
+  // Global toggle function
+  window.togglePMSNavbar = function() {
+    const toggleBtn = document.getElementById('pms-toggle-btn');
+    if (toggleBtn) toggleBtn.click();
   };
 
   if (document.readyState === 'loading') {
