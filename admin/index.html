@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>Dashboard | BEPO-PESO</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:       #ffffff;
+      --bg2:      #f8f9fb;
+      --bg3:      #f1f3f7;
+      --line:     #e8eaef;
+      --line2:    #dde0e8;
+      --text:     #0f1117;
+      --text2:    #3d4454;
+      --muted:    #8b91a1;
+      --accent:   #3b6ef5;
+      --accent-g: rgba(59,110,245,0.1);
+      --accent-b: rgba(59,110,245,0.06);
+      --success:  #16a34a;
+      --success-b:#dcfce7;
+      --danger:   #dc2626;
+      --danger-b: #fee2e2;
+      --warn:     #d97706;
+      --warn-b:   #fef3c7;
+      --font:     'DM Sans', system-ui, sans-serif;
+      --mono:     'DM Mono', monospace;
+      --ease:     cubic-bezier(0.4,0,0.2,1);
+      --r:        12px;
+      --rsm:      8px;
+      --shadow:   0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+      --shadow-md:0 2px 8px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.05);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg2);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .main {
+      padding: 28px 28px 40px;
+      max-width: 1400px;
+      margin: 0 auto;
+      animation: fadeUp 0.4s var(--ease) both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .page-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .page-title {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: -0.4px;
+      line-height: 1.2;
+    }
+
+    .page-sub {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    .page-date {
+      font-size: 12px;
+      font-family: var(--mono);
+      color: var(--muted);
+      background: var(--bg3);
+      border: 1px solid var(--line);
+      padding: 5px 12px;
+      border-radius: 40px;
+      white-space: nowrap;
+    }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+
+    .stat-card {
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: var(--r);
+      padding: 20px 22px;
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+
+    .stat-card:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-1px);
+    }
+
+    .stat-icon {
+      width: 44px; height: 44px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .stat-icon svg {
+      width: 20px; height: 20px;
+      stroke: currentColor; stroke-width: 1.8;
+      fill: none; stroke-linecap: round; stroke-linejoin: round;
+    }
+
+    .stat-icon.blue  { background: var(--accent-b);  color: var(--accent); }
+    .stat-icon.green { background: #dcfce7;           color: var(--success); }
+    .stat-icon.amber { background: #fef3c7;           color: var(--warn); }
+
+    .stat-number {
+      font-size: 26px;
+      font-weight: 600;
+      line-height: 1;
+      letter-spacing: -0.5px;
+      color: var(--text);
+    }
+    .stat-label {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 500;
+      margin-top: 3px;
+    }
+
+    .table-card {
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .table-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--line);
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .table-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .table-title svg {
+      width: 17px; height: 17px;
+      stroke: var(--accent); stroke-width: 1.8;
+      fill: none; stroke-linecap: round; stroke-linejoin: round;
+    }
+
+    .count-badge {
+      font-size: 11px;
+      font-family: var(--mono);
+      color: var(--accent);
+      background: var(--accent-b);
+      border: 1px solid rgba(59,110,245,0.15);
+      padding: 2px 8px;
+      border-radius: 40px;
+      font-weight: 500;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .search-wrap {
+      position: relative;
+    }
+
+    .search-wrap svg {
+      position: absolute;
+      left: 11px; top: 50%;
+      transform: translateY(-50%);
+      width: 15px; height: 15px;
+      stroke: var(--muted); stroke-width: 1.8;
+      fill: none; stroke-linecap: round;
+      pointer-events: none;
+    }
+
+    .search-wrap input {
+      font-family: var(--font);
+      font-size: 13px;
+      color: var(--text);
+      background: var(--bg2);
+      border: 1px solid var(--line);
+      border-radius: var(--rsm);
+      padding: 8px 12px 8px 34px;
+      width: 240px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s, width 0.3s;
+    }
+
+    .search-wrap input::placeholder { color: var(--muted); }
+
+    .search-wrap input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-g);
+      width: 280px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 16px;
+      border-radius: var(--rsm);
+      font-family: var(--font);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.18s var(--ease);
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .btn svg {
+      width: 14px; height: 14px;
+      stroke: currentColor; stroke-width: 2;
+      fill: none; stroke-linecap: round; stroke-linejoin: round;
+      flex-shrink: 0;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .btn-primary:hover {
+      background: #2d5ee0;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(59,110,245,0.3);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text2);
+      border-color: var(--line);
+    }
+
+    .btn-ghost:hover {
+      background: var(--bg3);
+      border-color: var(--line2);
+    }
+
+    .btn-icon-sm {
+      width: 30px; height: 30px;
+      padding: 0;
+      border-radius: var(--rsm);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+
+    .btn-icon-sm svg {
+      width: 14px; height: 14px;
+      stroke: currentColor; stroke-width: 1.8;
+      fill: none; stroke-linecap: round; stroke-linejoin: round;
+    }
+
+    .btn-icon-sm:hover {
+      background: var(--bg3);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .tbl-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    thead th {
+      padding: 10px 16px;
+      text-align: left;
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-family: var(--mono);
+      background: var(--bg2);
+      border-bottom: 1px solid var(--line);
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    tbody td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--line);
+      color: var(--text2);
+      vertical-align: middle;
+    }
+
+    tbody tr:last-child td { border-bottom: none; }
+
+    tbody tr {
+      transition: background 0.15s;
+    }
+
+    tbody tr:hover td { background: var(--bg2); }
+
+    .td-name {
+      font-weight: 600;
+      color: var(--text);
+      font-size: 13.5px;
+    }
+
+    .td-suffix {
+      font-size: 11px;
+      color: var(--muted);
+      margin-left: 3px;
+      font-weight: 400;
+    }
+
+    .td-mono {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--accent);
+      background: var(--accent-b);
+      padding: 2px 7px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+
+    .td-contact-name { color: var(--text); font-size: 12.5px; }
+    .td-contact-num  { font-size: 11.5px; color: var(--muted); font-family: var(--mono); margin-top: 1px; }
+
+    .td-address {
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 12.5px;
+    }
+
+    .td-num {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 9px;
+      border-radius: 40px;
+      font-size: 11.5px;
+      font-weight: 600;
+    }
+
+    .badge::before {
+      content: '';
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .badge-active   { background: var(--success-b); color: var(--success); }
+    .badge-active::before { background: var(--success); }
+    .badge-inactive { background: var(--danger-b);  color: var(--danger); }
+    .badge-inactive::before { background: var(--danger); }
+
+    .state-row td {
+      text-align: center;
+      padding: 56px 20px;
+      color: var(--muted);
+    }
+
+    .state-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .state-inner svg {
+      width: 36px; height: 36px;
+      stroke: var(--line2); stroke-width: 1.5;
+      fill: none; stroke-linecap: round; stroke-linejoin: round;
+      opacity: 0.8;
+    }
+
+    .state-inner p { font-size: 13.5px; font-weight: 500; }
+    .state-inner span { font-size: 12px; }
+
+    .spinner {
+      width: 24px; height: 24px;
+      border: 2px solid var(--line);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .table-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 13px 22px;
+      border-top: 1px solid var(--line);
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .pg-info {
+      font-size: 12px;
+      color: var(--muted);
+      font-family: var(--mono);
+    }
+
+    .pg-btns {
+      display: flex;
+      gap: 4px;
+    }
+
+    .pg-btns button {
+      min-width: 30px; height: 30px;
+      padding: 0 8px;
+      border-radius: var(--rsm);
+      border: 1px solid var(--line);
+      background: var(--bg);
+      color: var(--text2);
+      font-size: 12.5px;
+      font-family: var(--mono);
+      cursor: pointer;
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .pg-btns button svg {
+      width: 13px; height: 13px;
+      stroke: currentColor; stroke-width: 2;
+      fill: none; stroke-linecap: round; stroke-linejoin: round;
+    }
+
+    .pg-btns button:hover:not(:disabled) {
+      background: var(--bg3);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .pg-btns button.on {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .pg-btns button:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15,17,23,0.45);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      padding: 16px;
+    }
+
+    .modal-box {
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 28px;
+      max-width: 380px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+      animation: modalIn 0.25s var(--ease) both;
+    }
+
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.94) translateY(8px); }
+      to   { opacity: 1; transform: scale(1)    translateY(0); }
+    }
+
+    .modal-icon-wrap {
+      width: 52px; height: 52px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 18px;
+    }
+
+    .modal-icon-wrap svg {
+      width: 24px; height: 24px;
+      stroke: currentColor; stroke-width: 2;
+      fill: none; stroke-linecap: round; stroke-linejoin: round;
+    }
+
+    .modal-icon-wrap.info    { background: var(--accent-b);  color: var(--accent); }
+
+    .modal-title {
+      font-size: 16px;
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 6px;
+    }
+
+    .modal-detail {
+      background: var(--bg2);
+      border: 1px solid var(--line);
+      border-radius: var(--rsm);
+      padding: 14px 16px;
+      margin-bottom: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .modal-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 13px;
+    }
+
+    .modal-key {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      color: var(--muted);
+      letter-spacing: 0.4px;
+      min-width: 80px;
+      padding-top: 2px;
+    }
+
+    .modal-val {
+      color: var(--text);
+      font-weight: 500;
+      flex: 1;
+      line-height: 1.4;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 860px) {
+      .main { padding: 16px 14px 32px; }
+      .stats-row { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+      .stat-number { font-size: 22px; }
+      .search-wrap input { width: 180px; }
+      .search-wrap input:focus { width: 220px; }
+    }
+
+    @media (max-width: 600px) {
+      .stats-row { grid-template-columns: 1fr 1fr; }
+      .stats-row .stat-card:last-child { grid-column: span 2; }
+      .header-actions { width: 100%; }
+      .search-wrap, .search-wrap input { width: 100%; }
+      .search-wrap input:focus { width: 100%; }
+      .page-header { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+<main class="main">
+
+  <div class="page-header">
+    <div>
+      <div class="page-title" id="greetTitle">Good Morning</div>
+      <div class="page-sub">BEPO-PESO · Member Management System</div>
+    </div>
+    <div class="page-date" id="dateDisplay">—</div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon blue">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </div>
+      <div class="stat-info">
+        <div class="stat-number" id="totalMembers">—</div>
+        <div class="stat-label">Total Members</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon green">
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div class="stat-info">
+        <div class="stat-number" id="activeMembers">—</div>
+        <div class="stat-label">Active Members</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon amber">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </div>
+      <div class="stat-info">
+        <div class="stat-number" id="newToday">—</div>
+        <div class="stat-label">Registered Today</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="table-header">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="table-title">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="9" x2="9" y2="21"/></svg>
+          Member Records
+        </div>
+        <span class="count-badge" id="countBadge">0</span>
+      </div>
+      <div class="header-actions">
+        <div class="search-wrap">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="searchInput" placeholder="Search members…">
+        </div>
+        <a href="register.html" class="btn btn-primary">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Member
+        </a>
+        <button class="btn btn-ghost" id="refreshBtn">
+          <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          Refresh
+        </button>
+      </div>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Full Name</th>
+            <th>Nickname</th>
+            <th>ID Number</th>
+            <th>Birthdate</th>
+            <th>Status</th>
+            <th>Emergency Contact</th>
+            <th>Address</th>
+            <th>View</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr class="state-row">
+            <td colspan="9">
+              <div class="state-inner">
+                <div class="spinner"></div>
+                <p>Loading members…</p>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="table-footer">
+      <div class="pg-info" id="pgInfo">—</div>
+      <div class="pg-btns" id="pgBtns"></div>
+    </div>
+  </div>
+
+</main>
+
+<div id="modal" class="modal-overlay hidden">
+  <div class="modal-box" id="modalBox"></div>
+</div>
+
+<script src="navbar.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+  const SUPABASE_URL     = 'https://iharcxdakmyxjpqpcbnb.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloYXJjeGRha215eGpwcXBjYm5iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0ODc0NDEsImV4cCI6MjA5NDA2MzQ0MX0.5BE8ckW-3g5mJmXyrDWO_cytfI-_JrMaV4LQip7pbvs';
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const PER_PAGE = 10;
+  let allMembers = [], filtered = [], page = 1;
+
+  function initHeader() {
+    const h = new Date().getHours();
+    const greet = h < 12 ? 'Good Morning' : h < 17 ? 'Good Afternoon' : 'Good Evening';
+    document.getElementById('greetTitle').textContent = greet;
+    document.getElementById('dateDisplay').textContent =
+      new Date().toLocaleDateString('en-PH', { weekday:'short', year:'numeric', month:'long', day:'numeric' });
+  }
+
+  async function fetchStats() {
+    try {
+      const { data, error } = await supabase.from('members').select('status, created_at');
+      if (error) throw error;
+      const today = new Date(); today.setHours(0,0,0,0);
+      document.getElementById('totalMembers').textContent  = data.length;
+      document.getElementById('activeMembers').textContent = data.filter(m => m.status === 'Active').length;
+      document.getElementById('newToday').textContent      = data.filter(m => {
+        const d = new Date(m.created_at); d.setHours(0,0,0,0);
+        return d.getTime() === today.getTime();
+      }).length;
+    } catch (e) { console.error(e); }
+  }
+
+  async function fetchMembers() {
+    setLoading();
+    try {
+      const { data, error } = await supabase.from('members').select('*').order('created_at', { ascending: false });
+      if (error) throw error;
+      allMembers = data || [];
+      applyFilter();
+    } catch (e) {
+      document.getElementById('tableBody').innerHTML = stateHTML(
+        `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`,
+        'Failed to load', 'Check your connection and try again.'
+      );
+    }
+  }
+
+  function setLoading() {
+    document.getElementById('tableBody').innerHTML = `
+      <tr class="state-row"><td colspan="9">
+        <div class="state-inner"><div class="spinner"></div><p>Loading members…</p></div>
+      </td></tr>`;
+  }
+
+  function stateHTML(iconSVG, msg, sub='') {
+    return `<tr class="state-row"><td colspan="9"><div class="state-inner">${iconSVG}<p>${msg}</p>${sub ? `<span>${sub}</span>` : ''}</div></td></tr>`;
+  }
+
+  function applyFilter() {
+    const q = document.getElementById('searchInput').value.toLowerCase().trim();
+    filtered = q
+      ? allMembers.filter(m =>
+          [m.fullname, m.nickname, m.id_number, m.address].some(f => f && f.toLowerCase().includes(q))
+        )
+      : [...allMembers];
+    page = 1;
+    render();
+  }
+
+  function render() {
+    const total = filtered.length;
+    document.getElementById('countBadge').textContent = total;
+
+    if (total === 0) {
+      document.getElementById('tableBody').innerHTML = stateHTML(
+        `<svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/></svg>`,
+        'No members found', 'Try a different search term or add a new member.'
+      );
+      document.getElementById('pgInfo').textContent = 'No results';
+      document.getElementById('pgBtns').innerHTML = '';
+      return;
+    }
+
+    const start = (page - 1) * PER_PAGE;
+    const slice = filtered.slice(start, start + PER_PAGE);
+
+    document.getElementById('tableBody').innerHTML = slice.map((m, i) => {
+      const bday = m.birthdate
+        ? new Date(m.birthdate).toLocaleDateString('en-PH', { year:'numeric', month:'short', day:'numeric' })
+        : '—';
+      const isActive = !m.status || m.status === 'Active';
+      return `
+        <tr>
+          <td class="td-num">${start + i + 1}</td>
+          <td>
+            <span class="td-name">${esc(m.fullname) || '—'}</span>
+            ${m.suffix ? `<span class="td-suffix">${esc(m.suffix)}</span>` : ''}
+          </td>
+          <td>${esc(m.nickname) || '—'}</td>
+          <td><span class="td-mono">${esc(m.id_number) || '—'}</span></td>
+          <td>${bday}</td>
+          <td><span class="badge ${isActive ? 'badge-active' : 'badge-inactive'}">${esc(m.status) || 'Active'}</span></td>
+          <td>
+            <div class="td-contact-name">${esc(m.emergency_contact_name) || '—'}</div>
+            <div class="td-contact-num">${esc(m.emergency_contact_number) || ''}</div>
+          </td>
+          <td class="td-address" title="${esc(m.address) || ''}">${esc(m.address) || '—'}</td>
+          <td>
+            <button class="btn-icon-sm" onclick="viewMember('${m.id}')" title="View details">
+              <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </td>
+        </tr>`;
+    }).join('');
+
+    renderPagination(total);
+  }
+
+  function renderPagination(total) {
+    const pages = Math.ceil(total / PER_PAGE);
+    const s = (page - 1) * PER_PAGE + 1;
+    const e = Math.min(page * PER_PAGE, total);
+    document.getElementById('pgInfo').textContent = `${s}–${e} of ${total}`;
+
+    const c = document.getElementById('pgBtns');
+    let h = '';
+    const btn = (label, pg, disabled=false, on=false, isIcon=false) =>
+      `<button onclick="goPage(${pg})" ${disabled?'disabled':''} ${on?'class="on"':''}>
+        ${isIcon ? label : label}
+      </button>`;
+
+    h += btn('<svg viewBox="0 0 24 24"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg>', 1, page===1, false, true);
+    h += btn('<svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>', page-1, page===1, false, true);
+
+    let sp = Math.max(1, page - 2), ep = Math.min(pages, sp + 4);
+    if (ep - sp < 4) sp = Math.max(1, ep - 4);
+    for (let i = sp; i <= ep; i++) h += btn(i, i, false, i === page);
+
+    h += btn('<svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>', page+1, page===pages||pages===0, false, true);
+    h += btn('<svg viewBox="0 0 24 24"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>', pages, page===pages||pages===0, false, true);
+    c.innerHTML = h;
+  }
+
+  window.goPage = function(p) {
+    const pages = Math.ceil(filtered.length / PER_PAGE);
+    if (p < 1 || p > pages) return;
+    page = p;
+    render();
+  };
+
+  function showModal(html) {
+    document.getElementById('modalBox').innerHTML = html;
+    document.getElementById('modal').classList.remove('hidden');
+  }
+
+  function hideModal() { document.getElementById('modal').classList.add('hidden'); }
+
+  window.viewMember = function(id) {
+    const m = allMembers.find(x => x.id === id);
+    if (!m) return;
+    const bday = m.birthdate
+      ? new Date(m.birthdate).toLocaleDateString('en-PH', { year:'numeric', month:'long', day:'numeric' })
+      : 'N/A';
+    showModal(`
+      <div class="modal-icon-wrap info">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </div>
+      <div class="modal-title">${esc(m.fullname) || 'Member'}</div>
+      <div class="modal-detail">
+        ${detailRow('ID', m.id_number)}
+        ${detailRow('Nickname', m.nickname)}
+        ${detailRow('Birthdate', bday)}
+        ${detailRow('Status', m.status || 'Active')}
+        ${detailRow('Contact', `${m.emergency_contact_name || '—'} · ${m.emergency_contact_number || ''}`)}
+        ${detailRow('Address', m.address)}
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="hideModal()">Close</button>
+      </div>
+    `);
+  };
+
+  function detailRow(key, val) {
+    return `<div class="modal-row">
+      <span class="modal-key">${key}</span>
+      <span class="modal-val">${esc(val) || '—'}</span>
+    </div>`;
+  }
+
+  window.hideModal = hideModal;
+
+  document.getElementById('modal').addEventListener('click', function(e) {
+    if (e.target === this) hideModal();
+  });
+
+  function esc(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  document.getElementById('searchInput').addEventListener('input', applyFilter);
+
+  document.getElementById('refreshBtn').addEventListener('click', function() {
+    fetchMembers();
+    fetchStats();
+  });
+
+  initHeader();
+  fetchStats();
+  fetchMembers();
+
+  if (window.renderAdminNavbar) renderAdminNavbar();
+});
+</script>
+</body>
+</html>

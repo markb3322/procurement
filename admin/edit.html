@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>Edit Member | BEPO-PESO</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', system-ui, 'Segoe UI', Roboto, -apple-system, sans-serif;
+    }
+
+    body {
+      background: radial-gradient(circle at 10% 30%, #f8fafc 0%, #eef2f8 100%);
+      min-height: 100vh;
+      padding: 0;
+      margin: 0;
+      position: relative;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: -20%;
+      left: -10%;
+      width: 80%;
+      height: 80%;
+      background: radial-gradient(ellipse, rgba(11,43,79,0.03) 0%, rgba(255,255,255,0) 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .edit-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: calc(100vh - 80px);
+      position: relative;
+      z-index: 2;
+      padding: 1.5rem;
+      padding-top: 84px;
+    }
+
+    .edit-container {
+      width: 100%;
+      max-width: 820px;
+      background: rgba(255, 255, 255, 0.98);
+      border-radius: 2rem;
+      box-shadow: 0 30px 55px rgba(0, 20, 40, 0.12), 0 5px 12px rgba(0, 0, 0, 0.05);
+      padding: 2rem 2rem 2.5rem;
+      transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+      border: 1px solid rgba(255,255,255,0.5);
+    }
+
+    h2 {
+      color: #0a2b44;
+      font-weight: 800;
+      font-size: 1.9rem;
+      margin-bottom: 0.3rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      letter-spacing: -0.3px;
+    }
+
+    h2 i {
+      background: linear-gradient(135deg, #0f3b60, #0a2b44);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      font-size: 2rem;
+    }
+
+    .subtitle {
+      color: #4a627a;
+      font-weight: 500;
+      margin-bottom: 2rem;
+      font-size: 0.95rem;
+      border-left: 3px solid #f59e0b;
+      padding-left: 0.9rem;
+    }
+
+    .step-indicator {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+      background: #f1f5f9;
+      border-radius: 80px;
+      padding: 0.5rem;
+      gap: 0.5rem;
+    }
+
+    .step {
+      flex: 1;
+      text-align: center;
+      padding: 0.75rem 0.2rem;
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: #5c6f89;
+      border-radius: 60px;
+      transition: all 0.25s ease;
+      cursor: pointer;
+      background: transparent;
+      letter-spacing: 0.3px;
+    }
+
+    .step.active {
+      background: #0a2b44;
+      color: white;
+      box-shadow: 0 6px 14px rgba(10, 43, 68, 0.25);
+    }
+
+    .step.completed {
+      background: #e1ecf9;
+      color: #0a2b44;
+    }
+
+    .form-step {
+      display: none;
+      animation: slideFade 0.35s ease-out;
+    }
+
+    .form-step.active-step {
+      display: block;
+    }
+
+    @keyframes slideFade {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .media-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2rem;
+      justify-content: center;
+      margin: 1.8rem 0 2rem;
+    }
+
+    .media-card {
+      background: #f9fcff;
+      border-radius: 2rem;
+      padding: 1rem 1rem 1.2rem;
+      text-align: center;
+      transition: 0.2s;
+      flex: 1;
+      min-width: 160px;
+      border: 1px solid #eef2f8;
+    }
+
+    .image-preview {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background: #eef3fc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-size: cover;
+      background-position: center;
+      border: 3px solid white;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+      color: #7a8ea8;
+      font-size: 2.8rem;
+      transition: 0.2s;
+      cursor: pointer;
+      overflow: hidden;
+      margin: 0 auto 0.8rem;
+    }
+
+    .bg-preview {
+      width: 200px;
+      height: 110px;
+      border-radius: 24px;
+      background-size: cover;
+      background-position: center;
+      background-color: #eef3fc;
+      border: 2px solid white;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.06);
+      cursor: pointer;
+      margin: 0 auto 0.8rem;
+    }
+
+    .upload-label {
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: #1f4e6e;
+      display: block;
+      margin-top: 0.2rem;
+    }
+
+    .file-input { display: none; }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.2rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .input-group {
+      flex: 1 1 240px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .input-group label {
+      font-weight: 700;
+      font-size: 0.75rem;
+      color: #1f3b4c;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    input, textarea, select {
+      padding: 0.85rem 1rem;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      background: white;
+      transition: all 0.2s;
+      outline: none;
+      width: 100%;
+      font-family: 'Inter', system-ui, 'Segoe UI', Roboto, -apple-system, sans-serif;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      border-color: #2c7da0;
+      box-shadow: 0 0 0 3px rgba(44,125,160,0.15);
+    }
+
+    select {
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234a627a' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 40px;
+    }
+
+    .btn-group {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 2rem;
+      gap: 1rem;
+    }
+
+    button {
+      background: #f59e0b;
+      color: white;
+      border: none;
+      padding: 0.85rem 2rem;
+      border-radius: 40px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      transition: all 0.2s ease;
+      letter-spacing: 0.2px;
+      box-shadow: 0 2px 3px rgba(0,0,0,0.05);
+    }
+
+    button.secondary {
+      background: white;
+      color: #0a2b44;
+      border: 1.5px solid #cbdde9;
+      box-shadow: none;
+    }
+
+    button:hover {
+      background: #d97706;
+      transform: translateY(-2px);
+      box-shadow: 0 12px 20px rgba(245,158,11,0.3);
+    }
+
+    button.secondary:hover {
+      background: #f0f6fe;
+      transform: translateY(-1px);
+    }
+
+    .info-badge {
+      background: #eef2ff;
+      border-radius: 24px;
+      padding: 1rem 1.4rem;
+      margin: 1.2rem 0 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+    }
+
+    .loading-card {
+      background: white;
+      padding: 2rem 2.2rem;
+      border-radius: 2.2rem;
+      text-align: center;
+      max-width: 380px;
+      width: 90%;
+      box-shadow: 0 35px 50px rgba(0,0,0,0.25);
+    }
+
+    .spinner {
+      font-size: 2.8rem;
+      color: #f59e0b;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .hidden { display: none !important; }
+
+    .required-star::after {
+      content: "*";
+      color: #c0392b;
+      margin-left: 4px;
+    }
+
+    @media (max-width: 640px) {
+      .edit-container { padding: 1.5rem; }
+      .image-preview { width: 110px; height: 110px; }
+      .bg-preview { width: 150px; height: 85px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="edit-wrapper">
+    <div class="edit-container" id="editFormContainer">
+      <h2><i class="fas fa-user-edit"></i> Edit Member</h2>
+      <div class="subtitle" id="editSubtitle">Loading member data…</div>
+
+      <div class="step-indicator" id="stepIndicator">
+        <div class="step active" data-step="1">📸 Visuals</div>
+        <div class="step" data-step="2">📋 Personal Data</div>
+      </div>
+
+      <form id="editForm" novalidate>
+        <div class="form-step active-step" id="step1">
+          <div class="media-grid">
+            <div class="media-card">
+              <div class="image-preview" id="profilePreview" onclick="document.getElementById('profileUpload').click()">
+                <i class="fas fa-user-circle"></i>
+              </div>
+              <span class="upload-label"><i class="fas fa-camera"></i> Profile photo</span>
+              <input type="file" id="profileUpload" class="file-input" accept="image/*">
+            </div>
+            <div class="media-card">
+              <div class="image-preview bg-preview" id="bgPreview" onclick="document.getElementById('bgUpload').click()">
+                <i class="fas fa-mountain-sun"></i>
+              </div>
+              <span class="upload-label"><i class="fas fa-image"></i> Cover / Background</span>
+              <input type="file" id="bgUpload" class="file-input" accept="image/*">
+            </div>
+          </div>
+          <div class="info-badge">
+            <i class="fas fa-info-circle" style="color:#f59e0b;"></i>
+            <span style="font-size:0.85rem">Upload new images or skip to keep current ones.</span>
+          </div>
+          <div class="btn-group">
+            <div></div>
+            <button type="button" id="nextToStep2"><i class="fas fa-arrow-right"></i> Continue →</button>
+          </div>
+        </div>
+
+        <div class="form-step" id="step2">
+          <div class="row">
+            <div class="input-group">
+              <label class="required-star">Full Legal Name</label>
+              <input type="text" id="fullname" placeholder="Maria Concepcion R. Santos" autocomplete="name">
+            </div>
+            <div class="input-group">
+              <label class="required-star">Preferred Nickname</label>
+              <input type="text" id="nickname" placeholder="Maricon / Mar" autocomplete="off">
+            </div>
+          </div>
+          <div class="row">
+            <div class="input-group">
+              <label>Suffix (Jr., III, etc.)</label>
+              <input type="text" id="suffix" placeholder="optional">
+            </div>
+            <div class="input-group">
+              <label class="required-star">Birthdate</label>
+              <input type="date" id="birthdate">
+            </div>
+          </div>
+          <div class="row">
+            <div class="input-group">
+              <label class="required-star">Sex</label>
+              <select id="sex">
+                <option value="">Select sex</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <label class="required-star">Role</label>
+              <select id="role">
+                <option value="">Select role</option>
+                <option value="CDSP">CDSP</option>
+                <option value="Employee">Employee</option>
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <div class="input-group">
+              <label class="required-star">BEPO-PESO ID Number</label>
+              <input type="text" id="idNumber" placeholder="e.g., BP-2025-001234">
+            </div>
+            <div class="input-group">
+              <label>Membership Status</label>
+              <select id="status">
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+                <option value="Probationary">Probationary</option>
+                <option value="Suspended">Suspended</option>
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <div class="input-group">
+              <label>Emergency Contact Person</label>
+              <input type="text" id="emergencyName" placeholder="Full name">
+            </div>
+            <div class="input-group">
+              <label>Emergency Contact #</label>
+              <input type="tel" id="emergencyNumber" placeholder="+63 912 345 6789">
+            </div>
+          </div>
+          <div class="input-group">
+            <label>Complete Residential Address</label>
+            <textarea id="address" rows="2" placeholder="Unit/Floor, Building, Street, Barangay, City/Municipality"></textarea>
+          </div>
+          <div class="info-badge" style="background:#fef3c7;">
+            <i class="fas fa-key" style="color:#f59e0b;"></i>
+            <span style="font-size:0.85rem">Password: <strong id="currentPasswordDisplay" style="font-family:monospace;">—</strong></span>
+          </div>
+          <div class="btn-group">
+            <button type="button" class="secondary" id="backToStep1"><i class="fas fa-arrow-left"></i> Back</button>
+            <button type="button" id="updateMember"><i class="fas fa-save"></i> Update Member</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="popupModal" class="modal-overlay hidden">
+    <div class="loading-card" id="modalContent"></div>
+  </div>
+
+  <script src="navbar.js"></script>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      
+      if (window.renderPMSNavbar) {
+        renderPMSNavbar();
+      }
+      
+      const SUPABASE_URL = 'https://iharcxdakmyxjpqpcbnb.supabase.co';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloYXJjeGRha215eGpwcXBjYm5iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0ODc0NDEsImV4cCI6MjA5NDA2MzQ0MX0.5BE8ckW-3g5mJmXyrDWO_cytfI-_JrMaV4LQip7pbvs';
+      
+      const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const memberId = urlParams.get('id');
+
+      if (!memberId) {
+        alert('No member ID provided. Redirecting to records page.');
+        window.location.href = 'record_user.html';
+        return;
+      }
+
+      const step1Div = document.getElementById('step1');
+      const step2Div = document.getElementById('step2');
+      const stepIndicators = document.querySelectorAll('.step');
+      
+      const profileUpload = document.getElementById('profileUpload');
+      const bgUpload = document.getElementById('bgUpload');
+      const profilePreview = document.getElementById('profilePreview');
+      const bgPreview = document.getElementById('bgPreview');
+      
+      const fullname = document.getElementById('fullname');
+      const nickname = document.getElementById('nickname');
+      const suffix = document.getElementById('suffix');
+      const birthdate = document.getElementById('birthdate');
+      const sexField = document.getElementById('sex');
+      const roleField = document.getElementById('role');
+      const idNumber = document.getElementById('idNumber');
+      const statusField = document.getElementById('status');
+      const emergencyName = document.getElementById('emergencyName');
+      const emergencyNumber = document.getElementById('emergencyNumber');
+      const address = document.getElementById('address');
+      
+      const currentPasswordDisplay = document.getElementById('currentPasswordDisplay');
+      
+      const popupModal = document.getElementById('popupModal');
+      const modalContent = document.getElementById('modalContent');
+      
+      let profileImageBase64 = null;
+      let backgroundImageBase64 = null;
+      let originalData = null;
+      let profileChanged = false;
+      let bgChanged = false;
+
+      function updateStepIndicators(activeStep) {
+        stepIndicators.forEach(el => {
+          const stepNum = parseInt(el.dataset.step);
+          el.classList.remove('active', 'completed');
+          if (stepNum === activeStep) el.classList.add('active');
+          else if (stepNum < activeStep) el.classList.add('completed');
+        });
+      }
+      
+      function showStep(stepNumber) {
+        step1Div.classList.remove('active-step');
+        step2Div.classList.remove('active-step');
+        if (stepNumber === 1) step1Div.classList.add('active-step');
+        else if (stepNumber === 2) step2Div.classList.add('active-step');
+        updateStepIndicators(stepNumber);
+      }
+
+      function previewImage(fileInput, previewEl, isProfile = true) {
+        const file = fileInput.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const dataUrl = e.target.result;
+          if (isProfile) {
+            profileImageBase64 = dataUrl;
+            profileChanged = true;
+          } else {
+            backgroundImageBase64 = dataUrl;
+            bgChanged = true;
+          }
+          previewEl.style.backgroundImage = `url(${dataUrl})`;
+          previewEl.innerHTML = '';
+        };
+        reader.readAsDataURL(file);
+      }
+      
+      profileUpload.addEventListener('change', (e) => previewImage(e.target, profilePreview, true));
+      bgUpload.addEventListener('change', (e) => previewImage(e.target, bgPreview, false));
+
+      async function loadMemberData() {
+        try {
+          const { data, error } = await supabase
+            .from('members')
+            .select('*')
+            .eq('id', memberId)
+            .single();
+
+          if (error) throw error;
+          if (!data) throw new Error('Member not found');
+
+          originalData = data;
+          populateForm(data);
+          document.getElementById('editSubtitle').textContent = `Editing: ${data.fullname || 'Member'}`;
+        } catch (err) {
+          console.error('Error loading member:', err);
+          alert('Failed to load member data: ' + err.message);
+          window.location.href = 'record_user.html';
+        }
+      }
+
+      function populateForm(data) {
+        fullname.value = data.fullname || '';
+        nickname.value = data.nickname || '';
+        suffix.value = data.suffix || '';
+        birthdate.value = data.birthdate || '';
+        sexField.value = data.sex || '';
+        roleField.value = data.role || '';
+        idNumber.value = data.id_number || '';
+        statusField.value = data.status || 'Active';
+        emergencyName.value = data.emergency_contact_name || '';
+        emergencyNumber.value = data.emergency_contact_number || '';
+        address.value = data.address || '';
+        
+        currentPasswordDisplay.textContent = data.password || '—';
+
+        if (data.profile_image) {
+          profilePreview.style.backgroundImage = `url(${data.profile_image})`;
+          profilePreview.innerHTML = '';
+          profileImageBase64 = data.profile_image;
+        }
+
+        if (data.background_image) {
+          bgPreview.style.backgroundImage = `url(${data.background_image})`;
+          bgPreview.innerHTML = '';
+          backgroundImageBase64 = data.background_image;
+        }
+      }
+      
+      document.getElementById('nextToStep2').addEventListener('click', (e) => { e.preventDefault(); showStep(2); });
+      document.getElementById('backToStep1').addEventListener('click', (e) => { e.preventDefault(); showStep(1); });
+      
+      function showModal(innerHtml) { modalContent.innerHTML = innerHtml; popupModal.classList.remove('hidden'); }
+      function hideModal() { popupModal.classList.add('hidden'); }
+      
+      function showLoading(message = "Updating member...") {
+        showModal(`<div class="spinner"><i class="fas fa-circle-notch"></i></div><p style="font-weight: 600; margin-top: 1rem;">${message}</p>`);
+      }
+      
+      document.getElementById('updateMember').addEventListener('click', async (e) => {
+        e.preventDefault();
+        
+        if (!fullname.value.trim()) { alert("Full name is required"); fullname.focus(); return; }
+        if (!nickname.value.trim()) { alert("Nickname is required"); nickname.focus(); return; }
+        if (!birthdate.value) { alert("Birthdate is required"); birthdate.focus(); return; }
+        if (!sexField.value) { alert("Sex is required"); sexField.focus(); return; }
+        if (!roleField.value) { alert("Role is required"); roleField.focus(); return; }
+        if (!idNumber.value.trim()) { alert("BEPO-PESO ID Number is required"); idNumber.focus(); return; }
+
+        showLoading("Updating member record...");
+
+        const updatePayload = {
+          fullname: fullname.value.trim(),
+          nickname: nickname.value.trim(),
+          suffix: suffix.value.trim() || null,
+          birthdate: birthdate.value,
+          sex: sexField.value,
+          role: roleField.value,
+          id_number: idNumber.value.trim(),
+          status: statusField.value,
+          emergency_contact_name: emergencyName.value.trim() || null,
+          emergency_contact_number: emergencyNumber.value.trim() || null,
+          address: address.value.trim() || null,
+        };
+
+        if (profileChanged && profileImageBase64) {
+          updatePayload.profile_image = profileImageBase64;
+        }
+
+        if (bgChanged && backgroundImageBase64) {
+          updatePayload.background_image = backgroundImageBase64;
+        }
+
+        try {
+          const { data, error } = await supabase
+            .from('members')
+            .update(updatePayload)
+            .eq('id', memberId)
+            .select();
+
+          if (error) throw error;
+          
+          showModal(`
+            <div style="font-size: 3rem; color: #f59e0b;"><i class="fas fa-check-circle"></i></div>
+            <h3 style="color: #0a2b44; margin: 0.5rem 0;">Member Updated!</h3>
+            <p style="margin-bottom: 0.8rem;"><strong>${fullname.value.trim()}</strong> has been updated successfully.</p>
+            <p style="font-size: 0.85rem;">Redirecting to member records...</p>
+          `);
+          
+          setTimeout(() => { hideModal(); window.location.href = 'record_user.html'; }, 2000);
+          
+        } catch (err) {
+          console.error("Update error:", err);
+          showModal(`
+            <div style="font-size: 2.5rem; color: #dc2626;"><i class="fas fa-exclamation-triangle"></i></div>
+            <h4>Update Failed</h4>
+            <p style="font-size:0.85rem; margin: 0.8rem 0;">${err.message || "An error occurred while updating."}</p>
+            <button onclick="document.getElementById('popupModal').classList.add('hidden')" style="background:#0a2b44; color:white; border:none; padding:0.6rem 1.2rem; border-radius: 36px; margin-top: 0.5rem; cursor:pointer;">Close</button>
+          `);
+        }
+      });
+
+      document.getElementById('popupModal').addEventListener('click', function(e) {
+        if (e.target === this) hideModal();
+      });
+      
+      loadMemberData();
+      showStep(1);
+    });
+  </script>
+</body>
+</html>

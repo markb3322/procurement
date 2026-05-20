@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>Digital Employee ID | BEPO-PESO</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:       #ffffff;
+      --bg2:      #f8f9fb;
+      --bg3:      #f1f3f7;
+      --line:     #e8eaef;
+      --text:     #0f1117;
+      --text2:    #3d4454;
+      --muted:    #8b91a1;
+      --accent:   #1a56db;
+      --gold:     #b8860b;
+      --gold-bg:  #fef9e7;
+      --font:     'DM Sans', system-ui, sans-serif;
+      --mono:     'DM Mono', monospace;
+      --ease:     cubic-bezier(0.4,0,0.2,1);
+      --r:        12px;
+      --rsm:      8px;
+      --shadow:   0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+      --shadow-lg:0 20px 50px rgba(0,20,40,0.12);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      background: linear-gradient(145deg, #eef2f7 0%, #dce3ed 100%);
+      min-height: 100vh;
+    }
+
+    .main {
+      padding: 28px 28px 40px;
+      max-width: 1100px;
+      margin: 0 auto;
+      animation: fadeUp 0.4s var(--ease) both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .controls-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      background: var(--bg);
+      padding: 16px 24px;
+      border-radius: 60px;
+      box-shadow: var(--shadow);
+      margin-bottom: 32px;
+      border: 1px solid var(--line);
+    }
+
+    .selector-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 2;
+      min-width: 260px;
+    }
+
+    .selector-group label {
+      font-weight: 600;
+      color: var(--text);
+      font-size: 14px;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    select {
+      padding: 10px 16px;
+      border-radius: 40px;
+      border: 1.5px solid var(--line);
+      background: var(--bg2);
+      font-weight: 500;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+      min-width: 240px;
+      font-family: var(--font);
+      transition: border-color 0.2s, box-shadow 0.2s;
+      flex: 1;
+    }
+
+    select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(26,86,219,0.1);
+    }
+
+    .action-buttons { display: flex; gap: 8px; align-items: center; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center; gap: 7px;
+      padding: 10px 18px; border-radius: 40px;
+      font-family: var(--font); font-size: 13px; font-weight: 500;
+      cursor: pointer; border: 1px solid transparent;
+      transition: all 0.18s var(--ease); text-decoration: none; white-space: nowrap;
+    }
+    .btn svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+    .btn-primary { background: #0a2b44; color: #fff; border-color: #0a2b44; }
+    .btn-primary:hover { background: #123a60; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(10,43,68,0.3); }
+    .btn-ghost { background: var(--bg); color: var(--text2); border-color: var(--line); }
+    .btn-ghost:hover { background: var(--bg3); border-color: #cbd5e1; }
+    .btn-flip { background: var(--gold-bg); color: #8b6914; border-color: rgba(184,134,11,0.25); }
+    .btn-flip:hover { background: #fef3c7; border-color: var(--gold); }
+
+    .id-card-wrapper { display: flex; justify-content: center; perspective: 1200px; }
+    .id-flip-container { width: 100%; max-width: 750px; height: 460px; position: relative; }
+    .id-flip-inner { position: relative; width: 100%; height: 100%; transition: transform 0.6s var(--ease); transform-style: preserve-3d; }
+    .id-flip-inner.flipped { transform: rotateY(180deg); }
+
+    .id-front, .id-back {
+      position: absolute; inset: 0;
+      backface-visibility: hidden; border-radius: 16px;
+      overflow: hidden; box-shadow: var(--shadow-lg);
+    }
+
+    .id-front {
+      background: linear-gradient(160deg, #f8fafc 0%, #ffffff 40%, #f1f5f9 100%);
+      border: 1px solid var(--line);
+      display: flex; flex-direction: column;
+    }
+
+    .id-back {
+      background: linear-gradient(160deg, #f1f5f9 0%, #ffffff 40%, #f8fafc 100%);
+      border: 1px solid var(--line);
+      transform: rotateY(180deg);
+      display: flex; flex-direction: column;
+    }
+
+    /* ── Front Card Header ── */
+    .id-front-header {
+      background: var(--accent);
+      padding: 20px 28px;
+      display: flex; align-items: center; gap: 14px;
+      color: #fff;
+    }
+    .id-front-header .ph-flag {
+      width: 40px; height: 28px;
+      background: linear-gradient(180deg, #0038a8 0%, #0038a8 50%, #ce1126 50%, #ce1126 100%);
+      border-radius: 3px; flex-shrink: 0;
+      position: relative;
+    }
+    .id-front-header .ph-flag::before {
+      content: ''; position: absolute;
+      left: 0; top: 0; bottom: 0; width: 16px;
+      background: #fff; clip-path: polygon(0 0, 100% 0, 100% 0, 100% 50%, 100% 100%, 0 100%);
+    }
+    .id-front-header .header-text h4 {
+      font-size: 16px; font-weight: 700; letter-spacing: -0.3px; line-height: 1.1;
+    }
+    .id-front-header .header-text p {
+      font-size: 10px; opacity: 0.85; letter-spacing: 0.5px; text-transform: uppercase;
+    }
+
+    /* ── Front Card Body ── */
+    .id-front-body {
+      padding: 24px 28px; display: flex; gap: 24px; flex: 1;
+    }
+    .id-photo-section {
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+    }
+    .id-photo {
+      width: 120px; height: 150px; background: var(--bg3);
+      border: 2px solid var(--line); border-radius: 8px;
+      overflow: hidden; background-size: cover; background-position: center;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .id-photo .fallback-icon { font-size: 48px; color: #94a3b8; }
+    .id-signature {
+      font-family: 'Brush Script MT', cursive;
+      font-size: 16px; color: var(--text2); text-align: center;
+      border-bottom: 1px solid var(--text2); min-width: 100px;
+      padding-bottom: 2px; margin-top: 4px;
+    }
+    .id-info-section { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+    .id-info-row { display: flex; gap: 8px; }
+    .id-info-label {
+      font-size: 9px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.5px; min-width: 95px; padding-top: 3px;
+    }
+    .id-info-value {
+      font-size: 14px; font-weight: 600; color: var(--text);
+      border-bottom: 1px solid var(--line); padding-bottom: 4px; flex: 1;
+    }
+    .id-info-value.mono { font-family: var(--mono); font-size: 13px; color: var(--accent); }
+
+    /* ── Front Card Footer ── */
+    .id-front-footer {
+      padding: 12px 28px; border-top: 1px solid var(--line);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .id-number-badge {
+      font-family: var(--mono); font-size: 13px; font-weight: 600;
+      color: var(--accent); letter-spacing: 1px;
+    }
+    .id-issue-date { font-size: 10px; color: var(--muted); }
+
+    /* ── Back Card ── */
+    .id-back-header {
+      background: var(--accent); padding: 16px 28px;
+      color: #fff; text-align: center;
+    }
+    .id-back-header h4 { font-size: 14px; font-weight: 700; letter-spacing: -0.2px; }
+    .id-back-body {
+      padding: 24px 28px; flex: 1; display: flex; flex-direction: column; gap: 14px;
+    }
+    .back-info-row { display: flex; gap: 8px; }
+    .back-info-label {
+      font-size: 10px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.5px; min-width: 110px; padding-top: 2px;
+    }
+    .back-info-value { font-size: 13px; font-weight: 500; color: var(--text); flex: 1; border-bottom: 1px solid var(--line); padding-bottom: 3px; }
+    .back-emergency {
+      background: #fef3c7; border: 1px solid rgba(184,134,11,0.2);
+      border-radius: 8px; padding: 12px 14px; margin-top: 8px;
+    }
+    .back-emergency strong { color: #8b6914; font-size: 11px; text-transform: uppercase; }
+    .back-emergency p { font-size: 12px; color: var(--text2); margin-top: 4px; }
+    .id-back-footer {
+      padding: 12px 28px; border-top: 1px solid var(--line);
+      text-align: center; font-size: 10px; color: var(--muted);
+      font-family: var(--mono);
+    }
+
+    .spinner-sm { width: 20px; height: 20px; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 700px) {
+      .main { padding: 16px 12px 32px; }
+      .id-flip-container { height: auto; min-height: 500px; }
+      .id-front-body { flex-direction: column; align-items: center; padding: 16px 20px; }
+      .id-info-label { min-width: 80px; font-size: 8px; }
+      .id-info-value { font-size: 12px; }
+      .id-photo { width: 100px; height: 130px; }
+      .controls-bar { flex-direction: column; align-items: stretch; border-radius: 28px; padding: 14px 18px; }
+      .action-buttons { justify-content: center; }
+      .selector-group { flex-direction: column; align-items: flex-start; }
+      select { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<main class="main">
+
+  <div class="controls-bar">
+    <div class="selector-group">
+      <label>
+        <svg width="18" height="18" viewBox="0 0 24 24" stroke="var(--accent)" stroke-width="1.8" fill="none" stroke-linecap="round"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="7" y1="10" x2="17" y2="10"/><line x1="7" y1="14" x2="13" y2="14"/></svg>
+        Select Employee:
+      </label>
+      <select id="employeeSelect">
+        <option value="">Loading employees…</option>
+      </select>
+    </div>
+    <div class="action-buttons">
+      <button class="btn btn-flip" id="flipBtn" title="Flip ID Card">
+        <svg viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        Flip
+      </button>
+      <button class="btn btn-ghost" id="fontMinusBtn">
+        <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Font -
+      </button>
+      <button class="btn btn-primary" id="fontPlusBtn">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Font +
+      </button>
+      <button class="btn btn-ghost" id="backBtn">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        Back
+      </button>
+    </div>
+  </div>
+
+  <div class="id-card-wrapper">
+    <div class="id-flip-container">
+      <div class="id-flip-inner" id="idFlipInner">
+
+        <!-- FRONT -->
+        <div class="id-front">
+          <div class="id-front-header">
+            <div class="ph-flag"></div>
+            <div class="header-text">
+              <h4>Republic of the Philippines</h4>
+              <p>BEPO-PESO Identification Card</p>
+            </div>
+          </div>
+          <div class="id-front-body" id="idContent">
+            <div class="id-photo-section">
+              <div class="id-photo" id="profilePhoto">
+                <span class="fallback-icon">👤</span>
+              </div>
+              <div class="id-signature" id="displayNickname">—</div>
+            </div>
+            <div class="id-info-section">
+              <div class="id-info-row"><span class="id-info-label">Surname</span><span class="id-info-value" id="displaySurname">—</span></div>
+              <div class="id-info-row"><span class="id-info-label">Given Name</span><span class="id-info-value" id="displayGivenName">—</span></div>
+              <div class="id-info-row"><span class="id-info-label">Middle Name</span><span class="id-info-value" id="displayMiddleName">—</span></div>
+              <div class="id-info-row"><span class="id-info-label">Sex</span><span class="id-info-value">—</span></div>
+              <div class="id-info-row"><span class="id-info-label">Birthdate</span><span class="id-info-value" id="displayBirthdate">—</span></div>
+              <div class="id-info-row"><span class="id-info-label">Address</span><span class="id-info-value" id="displayAddress" style="font-size:12px;">—</span></div>
+            </div>
+          </div>
+          <div class="id-front-footer">
+            <span class="id-number-badge" id="displayIdNumber">BEPO-PESO-XXXX</span>
+            <span class="id-issue-date">Valid · Government Registry</span>
+          </div>
+        </div>
+
+        <!-- BACK -->
+        <div class="id-back">
+          <div class="id-back-header">
+            <h4>BEPO-PESO · Provincial Government of Bohol</h4>
+          </div>
+          <div class="id-back-body">
+            <div class="back-info-row"><span class="back-info-label">Full Name</span><span class="back-info-value" id="backFullname">—</span></div>
+            <div class="back-info-row"><span class="back-info-label">Nickname</span><span class="back-info-value" id="backNickname">—</span></div>
+            <div class="back-info-row"><span class="back-info-label">Status</span><span class="back-info-value" id="backStatus">—</span></div>
+            <div class="back-info-row"><span class="back-info-label">Role</span><span class="back-info-value" id="backRole">—</span></div>
+            <div class="back-emergency">
+              <strong>⚠ Emergency Contact</strong>
+              <p><span id="backEmergencyName">—</span> · <span id="backEmergencyNumber">—</span></p>
+              <p style="font-size:10px;margin-top:4px;">PGBH Trunkline: 412-1188 / 411-0138</p>
+            </div>
+          </div>
+          <div class="id-back-footer">
+            If found, return to: HR Dept, New Bohol Provincial Capitol, Brgy. Cogon, Tagbilaran City
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script src="navbar.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+  const SUPABASE_URL = 'https://iharcxdakmyxjpqpcbnb.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloYXJjeGRha215eGpwcXBjYm5iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0ODc0NDEsImV4cCI6MjA5NDA2MzQ0MX0.5BE8ckW-3g5mJmXyrDWO_cytfI-_JrMaV4LQip7pbvs';
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const employeeSelect = document.getElementById('employeeSelect');
+  const idFlipInner = document.getElementById('idFlipInner');
+  const idContent = document.getElementById('idContent');
+  let membersList = [];
+  let currentFontScale = 1;
+  const MIN_SCALE = 0.85;
+  const MAX_SCALE = 1.4;
+  let isFlipped = false;
+
+  function applyFontScale() {
+    idContent.style.fontSize = `${currentFontScale}rem`;
+    document.querySelectorAll('.id-info-value, .back-info-value').forEach(el => {
+      el.style.fontSize = `${currentFontScale * 0.9}rem`;
+    });
+    document.querySelectorAll('.id-info-label, .back-info-label').forEach(el => {
+      el.style.fontSize = `${currentFontScale * 0.65}rem`;
+    });
+  }
+
+  async function loadMembers() {
+    employeeSelect.innerHTML = '<option value="">Loading…</option>';
+    try {
+      const { data, error } = await supabase.from('members').select('*').order('fullname', { ascending: true });
+      if (error) throw error;
+      membersList = data || [];
+      populateSelect();
+      if (membersList.length > 0) {
+        employeeSelect.value = membersList[0].id;
+        renderMemberCard(membersList[0]);
+      }
+    } catch (err) {
+      console.error('Error loading members:', err);
+      employeeSelect.innerHTML = '<option value="">Failed to load</option>';
+    }
+  }
+
+  function populateSelect() {
+    employeeSelect.innerHTML = '<option value="">-- Select Employee --</option>';
+    if (!membersList.length) { employeeSelect.innerHTML += '<option disabled>No members found</option>'; return; }
+    membersList.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m.id;
+      opt.textContent = `${m.fullname || 'Unknown'} (${m.id_number || 'N/A'})`;
+      employeeSelect.appendChild(opt);
+    });
+  }
+
+  function parseName(fullname) {
+    if (!fullname) return { surname: '—', givenName: '—', middleName: '—' };
+    const parts = fullname.trim().split(/\s+/);
+    if (parts.length === 1) return { surname: parts[0], givenName: '—', middleName: '—' };
+    if (parts.length === 2) return { surname: parts[1], givenName: parts[0], middleName: '—' };
+    return { surname: parts[parts.length - 1], givenName: parts[0], middleName: parts.slice(1, -1).join(' ') };
+  }
+
+  function renderMemberCard(member) {
+    if (!member) return;
+    const name = parseName(member.fullname);
+    document.getElementById('displaySurname').textContent = name.surname;
+    document.getElementById('displayGivenName').textContent = name.givenName;
+    document.getElementById('displayMiddleName').textContent = name.middleName;
+    document.getElementById('displayNickname').textContent = member.nickname || '—';
+    document.getElementById('displayBirthdate').textContent = member.birthdate || '—';
+    document.getElementById('displayAddress').textContent = member.address || '—';
+    document.getElementById('displayIdNumber').textContent = member.id_number || 'BEPO-PESO-XXXX';
+
+    document.getElementById('backFullname').textContent = member.fullname || '—';
+    document.getElementById('backNickname').textContent = member.nickname || '—';
+    document.getElementById('backStatus').textContent = member.status || 'Active';
+    document.getElementById('backRole').textContent = member.role || '—';
+    document.getElementById('backEmergencyName').textContent = member.emergency_contact_name || '—';
+    document.getElementById('backEmergencyNumber').textContent = member.emergency_contact_number || '—';
+
+    const photoDiv = document.getElementById('profilePhoto');
+    if (member.profile_image && (member.profile_image.startsWith('data:image') || member.profile_image.startsWith('http'))) {
+      photoDiv.style.backgroundImage = `url(${member.profile_image})`;
+      photoDiv.style.backgroundSize = 'cover';
+      photoDiv.style.backgroundPosition = 'center';
+      photoDiv.innerHTML = '';
+    } else {
+      photoDiv.style.backgroundImage = '';
+      photoDiv.innerHTML = '<span class="fallback-icon">👤</span>';
+    }
+  }
+
+  employeeSelect.addEventListener('change', function () {
+    const id = this.value;
+    if (!id) return;
+    const m = membersList.find(x => x.id === id);
+    if (m) renderMemberCard(m);
+  });
+
+  document.getElementById('flipBtn').addEventListener('click', () => {
+    isFlipped = !isFlipped;
+    idFlipInner.classList.toggle('flipped', isFlipped);
+    document.getElementById('flipBtn').innerHTML = isFlipped
+      ? `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> Flip Back`
+      : `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> Flip`;
+  });
+
+  document.getElementById('fontPlusBtn').addEventListener('click', () => {
+    if (currentFontScale < MAX_SCALE) { currentFontScale += 0.05; applyFontScale(); }
+  });
+  document.getElementById('fontMinusBtn').addEventListener('click', () => {
+    if (currentFontScale > MIN_SCALE) { currentFontScale -= 0.05; applyFontScale(); }
+  });
+  document.getElementById('backBtn').addEventListener('click', () => {
+    window.location.href = document.referrer ? document.referrer : 'record_user.html';
+  });
+
+  applyFontScale();
+  loadMembers();
+  if (window.renderPMSNavbar) renderPMSNavbar();
+});
+</script>
+</body>
+</html>

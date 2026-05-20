@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>View Member | BEPO-PESO</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', 'Segoe UI', Roboto, -apple-system, sans-serif;
+    }
+
+    body {
+      background: #f0f2f5;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 0;
+      margin: 0;
+    }
+
+    .view-wrapper {
+      width: 100%;
+      max-width: 680px;
+      min-height: 100vh;
+      background: #ffffff;
+      padding: 0 0 20px 0;
+      position: relative;
+    }
+
+    .fb-topbar {
+      background: #ffffff;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid #e4e6eb;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    .fb-back-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #e4e6eb;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #050505;
+      font-size: 16px;
+      transition: background 0.15s;
+      flex-shrink: 0;
+    }
+
+    .fb-back-btn:hover {
+      background: #d8dadf;
+    }
+
+    .fb-topbar-title {
+      font-size: 17px;
+      font-weight: 600;
+      color: #050505;
+      flex: 1;
+    }
+
+    .fb-topbar-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .fb-icon-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #e4e6eb;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #050505;
+      font-size: 15px;
+      transition: background 0.15s;
+      text-decoration: none;
+    }
+
+    .fb-icon-btn:hover {
+      background: #d8dadf;
+    }
+
+    .fb-icon-btn.primary {
+      background: #1b74e4;
+      color: #ffffff;
+    }
+
+    .fb-icon-btn.primary:hover {
+      background: #1a6ed8;
+    }
+
+    .cover-photo {
+      width: 100%;
+      height: 200px;
+      background: linear-gradient(180deg, #8bb8ea 0%, #c4dbf5 50%, #e7f0f9 100%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cover-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .cover-photo .cover-gradient {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 80px;
+      background: linear-gradient(transparent, rgba(255,255,255,0.9));
+    }
+
+    .profile-section {
+      display: flex;
+      align-items: flex-end;
+      padding: 0 16px;
+      margin-top: -40px;
+      position: relative;
+      z-index: 10;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .profile-avatar {
+      width: 130px;
+      height: 130px;
+      border-radius: 50%;
+      border: 4px solid #ffffff;
+      background: #e4e6eb;
+      background-size: cover;
+      background-position: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .profile-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+    }
+
+    .profile-avatar .fallback-icon {
+      font-size: 50px;
+      color: #8a8d91;
+    }
+
+    .profile-name-section {
+      padding-bottom: 12px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .profile-name-section h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #050505;
+      line-height: 1.2;
+      word-break: break-word;
+    }
+
+    .profile-name-section .subtitle-text {
+      font-size: 14px;
+      color: #65676b;
+      font-weight: 500;
+      margin-top: 2px;
+    }
+
+    .profile-name-section .tag-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 6px;
+      flex-wrap: wrap;
+    }
+
+    .fb-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      background: #e4e6eb;
+      color: #050505;
+    }
+
+    .fb-tag.blue {
+      background: #e7f3ff;
+      color: #1b74e4;
+    }
+
+    .fb-tag.green {
+      background: #e5f5e1;
+      color: #2e7d32;
+    }
+
+    .fb-tag.red {
+      background: #fce4e4;
+      color: #c62828;
+    }
+
+    .fb-divider {
+      height: 1px;
+      background: #e4e6eb;
+      margin: 16px 0;
+    }
+
+    .info-section {
+      padding: 0 16px;
+    }
+
+    .info-section h3 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #050505;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .info-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .info-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid #f0f2f5;
+    }
+
+    .info-item:last-child {
+      border-bottom: none;
+    }
+
+    .info-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #e4e6eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #65676b;
+      font-size: 15px;
+      flex-shrink: 0;
+    }
+
+    .info-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .info-content .info-label {
+      font-size: 12px;
+      color: #65676b;
+      font-weight: 500;
+    }
+
+    .info-content .info-value {
+      font-size: 14px;
+      color: #050505;
+      font-weight: 500;
+      word-break: break-word;
+    }
+
+    .info-content .info-value.mono {
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      background: #f0f2f5;
+      padding: 2px 8px;
+      border-radius: 4px;
+      display: inline-block;
+      margin-top: 2px;
+    }
+
+    .emergency-box {
+      background: #fff8e1;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin: 0 16px;
+      border-left: 4px solid #f59e0b;
+    }
+
+    .emergency-box h4 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #92400e;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .emergency-box .em-row {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .emergency-box .em-row div {
+      font-size: 13px;
+      color: #3d4454;
+    }
+
+    .emergency-box .em-row strong {
+      color: #050505;
+    }
+
+    .loading-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #65676b;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #e4e6eb;
+      border-top-color: #1b74e4;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 500px) {
+      .profile-avatar {
+        width: 100px;
+        height: 100px;
+        margin-top: -30px;
+      }
+      .profile-name-section h1 {
+        font-size: 18px;
+      }
+      .cover-photo {
+        height: 150px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="view-wrapper">
+  
+  <div class="fb-topbar">
+    <button class="fb-back-btn" id="backBtn">
+      <i class="fas fa-arrow-left"></i>
+    </button>
+    <span class="fb-topbar-title">Profile</span>
+    <div class="fb-topbar-actions">
+      <a href="#" class="fb-icon-btn" id="editBtn" title="Edit Profile">
+        <i class="fas fa-pencil-alt"></i>
+      </a>
+    </div>
+  </div>
+
+  <div class="loading-state" id="loadingState">
+    <div class="spinner"></div>
+    <p>Loading profile…</p>
+  </div>
+
+  <div id="viewContent" class="hidden">
+
+    <div class="cover-photo" id="coverPhoto">
+      <div class="cover-gradient"></div>
+    </div>
+
+    <div class="profile-section">
+      <div class="profile-avatar" id="profileAvatar">
+        <span class="fallback-icon"><i class="fas fa-user-circle"></i></span>
+      </div>
+      <div class="profile-name-section">
+        <h1 id="displayFullname">—</h1>
+        <p class="subtitle-text" id="displayNicknameLine">—</p>
+        <div class="tag-row">
+          <span class="fb-tag blue" id="displayIdNumber">—</span>
+          <span class="fb-tag" id="displayRole">—</span>
+          <span class="fb-tag green" id="displayStatus">Active</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="fb-divider"></div>
+
+    <div class="info-section">
+      <h3><i class="fas fa-info-circle"></i> About</h3>
+      <div class="info-list">
+        <div class="info-item">
+          <div class="info-icon"><i class="fas fa-user-tag"></i></div>
+          <div class="info-content">
+            <div class="info-label">Nickname</div>
+            <div class="info-value" id="displayNickname">—</div>
+          </div>
+        </div>
+        <div class="info-item">
+          <div class="info-icon"><i class="fas fa-venus-mars"></i></div>
+          <div class="info-content">
+            <div class="info-label">Sex</div>
+            <div class="info-value" id="displaySex">—</div>
+          </div>
+        </div>
+        <div class="info-item">
+          <div class="info-icon"><i class="fas fa-cake-candles"></i></div>
+          <div class="info-content">
+            <div class="info-label">Birthdate</div>
+            <div class="info-value" id="displayBirthdate">—</div>
+          </div>
+        </div>
+        <div class="info-item">
+          <div class="info-icon"><i class="fas fa-map-marker-alt"></i></div>
+          <div class="info-content">
+            <div class="info-label">Address</div>
+            <div class="info-value" id="displayAddress">—</div>
+          </div>
+        </div>
+        <div class="info-item">
+          <div class="info-icon"><i class="fas fa-key"></i></div>
+          <div class="info-content">
+            <div class="info-label">Password</div>
+            <div class="info-value mono" id="displayPassword">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="emergency-box">
+      <h4><i class="fas fa-phone-alt"></i> Emergency Contact</h4>
+      <div class="em-row">
+        <div><strong>Person:</strong> <span id="displayEmergencyName">—</span></div>
+        <div><strong>Number:</strong> <span id="displayEmergencyNumber">—</span></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="navbar.js"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    
+    const SUPABASE_URL = 'https://iharcxdakmyxjpqpcbnb.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloYXJjeGRha215eGpwcXBjYm5iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0ODc0NDEsImV4cCI6MjA5NDA2MzQ0MX0.5BE8ckW-3g5mJmXyrDWO_cytfI-_JrMaV4LQip7pbvs';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const memberId = urlParams.get('id');
+
+    if (!memberId) {
+      document.getElementById('loadingState').innerHTML = '<p style="color:#c62828;">No member ID provided.</p>';
+      return;
+    }
+
+    async function loadMemberData() {
+      try {
+        const { data, error } = await supabase
+          .from('members')
+          .select('*')
+          .eq('id', memberId)
+          .single();
+
+        if (error || !data) throw new Error('Member not found');
+        renderMember(data);
+      } catch (err) {
+        document.getElementById('loadingState').innerHTML = '<p style="color:#c62828;">Failed to load profile.</p>';
+      }
+    }
+
+    function renderMember(data) {
+      document.getElementById('loadingState').classList.add('hidden');
+      document.getElementById('viewContent').classList.remove('hidden');
+
+      document.getElementById('displayFullname').textContent = data.fullname || 'Unknown';
+      document.getElementById('displayNicknameLine').textContent = data.nickname ? `@${data.nickname}` : '—';
+      document.getElementById('displayNickname').textContent = data.nickname || '—';
+      document.getElementById('displayIdNumber').textContent = data.id_number || '—';
+      document.getElementById('displaySex').textContent = data.sex || '—';
+      document.getElementById('displayBirthdate').textContent = data.birthdate || '—';
+      document.getElementById('displayAddress').textContent = data.address || '—';
+      document.getElementById('displayPassword').textContent = data.password || '—';
+      document.getElementById('displayEmergencyName').textContent = data.emergency_contact_name || '—';
+      document.getElementById('displayEmergencyNumber').textContent = data.emergency_contact_number || '—';
+
+      const roleEl = document.getElementById('displayRole');
+      roleEl.textContent = data.role || 'Member';
+      roleEl.className = 'fb-tag ' + (data.role === 'CDSP' ? 'blue' : '');
+
+      const statusEl = document.getElementById('displayStatus');
+      const isActive = !data.status || data.status === 'Active';
+      statusEl.textContent = data.status || 'Active';
+      statusEl.className = 'fb-tag ' + (isActive ? 'green' : 'red');
+
+      if (data.profile_image && (data.profile_image.startsWith('data:image') || data.profile_image.startsWith('http'))) {
+        document.getElementById('profileAvatar').innerHTML = `<img src="${data.profile_image}" alt="Profile">`;
+      }
+
+      if (data.background_image && (data.background_image.startsWith('data:image') || data.background_image.startsWith('http'))) {
+        document.getElementById('coverPhoto').innerHTML = `<img src="${data.background_image}" alt="Cover" style="width:100%;height:100%;object-fit:cover;"><div class="cover-gradient"></div>`;
+      }
+
+      document.getElementById('editBtn').href = `edit.html?id=${memberId}`;
+    }
+
+    document.getElementById('backBtn').addEventListener('click', () => {
+      window.location.href = 'record_user.html';
+    });
+
+    loadMemberData();
+  });
+</script>
+</body>
+</html>

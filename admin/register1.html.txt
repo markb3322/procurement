@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>Member Registration | BEPO-PESO</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:       #0d0f14;
+      --bg2:      #14171f;
+      --bg3:      #1c2030;
+      --line:     rgba(255,255,255,0.07);
+      --line2:    rgba(255,255,255,0.12);
+      --text:     #e8eaf0;
+      --muted:    rgba(232,234,240,0.45);
+      --accent:   #5b8af5;
+      --accent-g: rgba(91,138,245,0.15);
+      --accent-b: rgba(91,138,245,0.08);
+      --success:  #4ade80;
+      --danger:   #f87171;
+      --danger-b: rgba(248,113,113,0.08);
+      --font:     'DM Sans', system-ui, sans-serif;
+      --mono:     'DM Mono', monospace;
+      --ease:     cubic-bezier(0.4,0,0.2,1);
+      --r:        12px;
+      --r-sm:     8px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 80px 16px 40px;
+      position: relative;
+    }
+
+    /* subtle grid bg */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--line) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      top: -30%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      height: 400px;
+      background: radial-gradient(ellipse at center, rgba(91,138,245,0.06) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .register-container {
+      width: 100%;
+      max-width: 640px;
+      position: relative;
+      z-index: 1;
+      animation: slideUp 0.5s var(--ease) both;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Header ── */
+    .reg-header {
+      margin-bottom: 28px;
+    }
+    .reg-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 5px 12px;
+      background: var(--accent-b);
+      border: 1px solid rgba(91,138,245,0.2);
+      border-radius: 40px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--accent);
+      font-family: var(--mono);
+      letter-spacing: 0.5px;
+      margin-bottom: 14px;
+    }
+    .reg-badge .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+    .reg-title {
+      font-size: 26px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: -0.5px;
+      line-height: 1.2;
+      margin-bottom: 6px;
+    }
+    .reg-sub {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    /* ── Step indicator ── */
+    .step-bar {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 24px;
+    }
+    .step-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      cursor: pointer;
+    }
+    .step-track {
+      height: 3px;
+      background: var(--bg3);
+      border-radius: 3px;
+      overflow: hidden;
+      transition: background 0.3s;
+    }
+    .step-item.active .step-track,
+    .step-item.completed .step-track {
+      background: var(--accent);
+    }
+    .step-item.completed .step-track {
+      background: rgba(91,138,245,0.4);
+    }
+    .step-label {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--muted);
+      font-family: var(--mono);
+      letter-spacing: 0.3px;
+      transition: color 0.2s;
+    }
+    .step-item.active .step-label { color: var(--accent); }
+    .step-item.completed .step-label { color: rgba(91,138,245,0.6); }
+
+    /* ── Card ── */
+    .reg-card {
+      background: var(--bg2);
+      border: 1px solid var(--line2);
+      border-radius: var(--r);
+      padding: 28px;
+      position: relative;
+      overflow: hidden;
+    }
+    .reg-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(91,138,245,0.3), transparent);
+    }
+
+    /* ── Form steps ── */
+    .form-step { display: none; }
+    .form-step.active-step {
+      display: block;
+      animation: fadeIn 0.3s var(--ease) both;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Upload area ── */
+    .upload-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+      margin: 8px 0 20px;
+    }
+    .upload-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .upload-circle {
+      width: 110px; height: 110px;
+      border-radius: 50%;
+      background: var(--bg3);
+      border: 2px dashed rgba(91,138,245,0.3);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      overflow: hidden;
+      background-size: cover;
+      background-position: center;
+      color: var(--muted);
+      font-size: 28px;
+    }
+    .upload-circle:hover {
+      border-color: var(--accent);
+      background-color: var(--accent-b);
+      color: var(--accent);
+    }
+    .upload-circle svg {
+      width: 28px; height: 28px;
+      stroke: currentColor; stroke-width: 1.5; fill: none;
+      stroke-linecap: round; stroke-linejoin: round;
+      pointer-events: none;
+    }
+    .upload-rect {
+      width: 160px; height: 90px;
+      border-radius: var(--r-sm);
+      background: var(--bg3);
+      border: 2px dashed rgba(91,138,245,0.3);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      overflow: hidden;
+      background-size: cover;
+      background-position: center;
+      color: var(--muted);
+    }
+    .upload-rect:hover {
+      border-color: var(--accent);
+      background-color: var(--accent-b);
+      color: var(--accent);
+    }
+    .upload-rect svg {
+      width: 24px; height: 24px;
+      stroke: currentColor; stroke-width: 1.5; fill: none;
+      stroke-linecap: round; stroke-linejoin: round;
+    }
+    .upload-label {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--muted);
+      font-family: var(--mono);
+      letter-spacing: 0.3px;
+    }
+    .file-input { display: none; }
+
+    /* hint block on step 1 */
+    .step-hint {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px 14px;
+      background: var(--accent-b);
+      border: 1px solid rgba(91,138,245,0.15);
+      border-radius: var(--r-sm);
+      margin-bottom: 4px;
+    }
+    .step-hint svg {
+      width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px;
+      stroke: var(--accent); stroke-width: 1.7; fill: none;
+      stroke-linecap: round; stroke-linejoin: round;
+    }
+    .step-hint p {
+      font-size: 12px;
+      color: rgba(91,138,245,0.8);
+      line-height: 1.5;
+    }
+
+    /* ── Fields ── */
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .input-group {
+      flex: 1 1 200px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .input-group.full { flex: 1 1 100%; }
+    .input-group label {
+      font-size: 10.5px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.7px;
+      text-transform: uppercase;
+      font-family: var(--mono);
+    }
+    .input-group label .req {
+      color: var(--accent);
+      margin-left: 2px;
+    }
+    input, textarea, select {
+      font-family: var(--font);
+      font-size: 13.5px;
+      font-weight: 400;
+      color: var(--text);
+      background: var(--bg3);
+      border: 1px solid var(--line2);
+      border-radius: var(--r-sm);
+      padding: 10px 14px;
+      outline: none;
+      width: 100%;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      -webkit-appearance: none;
+    }
+    input::placeholder, textarea::placeholder { color: var(--muted); }
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-g);
+    }
+    input:read-only, input:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+    textarea { resize: vertical; min-height: 72px; }
+
+    /* readonly/generated fields */
+    .field-readonly {
+      background: var(--bg);
+      border-color: var(--line);
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--accent);
+    }
+
+    /* ── Buttons ── */
+    .btn-group {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 24px;
+      gap: 10px;
+    }
+    .btn-group .spacer { flex: 1; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 22px;
+      border-radius: 40px;
+      font-family: var(--font);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.2s var(--ease);
+      white-space: nowrap;
+      text-decoration: none;
+    }
+    .btn svg {
+      width: 15px; height: 15px;
+      stroke: currentColor; stroke-width: 2; fill: none;
+      stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .btn-primary:hover {
+      background: #4a79e4;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 20px rgba(91,138,245,0.3);
+    }
+    .btn-primary:active { transform: scale(0.98); }
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border-color: var(--line2);
+    }
+    .btn-ghost:hover {
+      background: var(--bg3);
+      color: var(--text);
+      border-color: rgba(255,255,255,0.15);
+    }
+    .btn-success {
+      background: rgba(74,222,128,0.1);
+      color: var(--success);
+      border-color: rgba(74,222,128,0.25);
+    }
+    .btn-success:hover {
+      background: rgba(74,222,128,0.18);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 20px rgba(74,222,128,0.15);
+    }
+    .btn:disabled { opacity: 0.5; pointer-events: none; }
+
+    /* ── Section divider ── */
+    .section-divider {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 20px 0 16px;
+    }
+    .section-divider span {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      font-family: var(--mono);
+      white-space: nowrap;
+    }
+    .section-divider::before,
+    .section-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--line);
+    }
+
+    /* ── Account preview (step 3) ── */
+    .account-preview {
+      background: var(--bg);
+      border: 1px solid var(--line2);
+      border-radius: var(--r-sm);
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+    .account-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .account-key {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--muted);
+      font-family: var(--mono);
+      letter-spacing: 0.4px;
+    }
+    .account-val {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      font-family: var(--mono);
+    }
+    .account-val.highlight { color: var(--accent); }
+
+    .info-note {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--muted);
+      padding: 10px 14px;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: var(--r-sm);
+      margin-bottom: 4px;
+    }
+    .info-note svg {
+      width: 14px; height: 14px; flex-shrink: 0; margin-top: 1px;
+      stroke: var(--muted); stroke-width: 1.7; fill: none;
+      stroke-linecap: round; stroke-linejoin: round;
+    }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      padding: 16px;
+    }
+    .modal-card {
+      background: var(--bg2);
+      border: 1px solid var(--line2);
+      border-radius: var(--r);
+      padding: 36px 28px;
+      max-width: 340px;
+      width: 100%;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      position: relative;
+      overflow: hidden;
+      animation: modalIn 0.3s var(--ease) both;
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.92) translateY(10px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .modal-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(91,138,245,0.4), transparent);
+    }
+
+    .spinner-ring {
+      width: 48px; height: 48px;
+      border: 2px solid var(--line2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .modal-icon {
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .modal-icon.success { background: rgba(74,222,128,0.1); }
+    .modal-icon.error   { background: rgba(248,113,113,0.1); }
+    .modal-icon svg {
+      width: 26px; height: 26px;
+      stroke-width: 2; fill: none;
+      stroke-linecap: round; stroke-linejoin: round;
+    }
+    .modal-icon.success svg { stroke: var(--success); }
+    .modal-icon.error   svg { stroke: var(--danger); }
+
+    .modal-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .modal-body {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .hidden { display: none !important; }
+
+    /* ── Responsive ── */
+    @media (max-width: 520px) {
+      .reg-card { padding: 20px 16px; }
+      .upload-group { gap: 16px; }
+      .upload-circle { width: 90px; height: 90px; }
+      .upload-rect { width: 130px; height: 74px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="register-container" id="registerFormContainer">
+  <div class="reg-header">
+    <div class="reg-badge">
+      <span class="dot"></span>
+      BEPO-PESO · Member Registration
+    </div>
+    <h1 class="reg-title">New Member Enrollment</h1>
+    <p class="reg-sub">Complete all three steps to register a new member.</p>
+  </div>
+
+  <!-- Step bar -->
+  <div class="step-bar" id="stepBar">
+    <div class="step-item active" data-step="1">
+      <div class="step-track"></div>
+      <div class="step-label">01 · Profile Media</div>
+    </div>
+    <div class="step-item" data-step="2">
+      <div class="step-track"></div>
+      <div class="step-label">02 · Identity</div>
+    </div>
+    <div class="step-item" data-step="3">
+      <div class="step-track"></div>
+      <div class="step-label">03 · Account</div>
+    </div>
+  </div>
+
+  <div class="reg-card">
+    <form id="registrationForm" novalidate>
+
+      <!-- Step 1 -->
+      <div class="form-step active-step" id="step1">
+        <div class="upload-group">
+          <div class="upload-box">
+            <div class="upload-circle" id="profilePreview" onclick="document.getElementById('profileUpload').click()" title="Upload profile photo">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+            </div>
+            <span class="upload-label">Profile Photo</span>
+            <input type="file" id="profileUpload" class="file-input" accept="image/*">
+          </div>
+          <div class="upload-box">
+            <div class="upload-rect" id="bgPreview" onclick="document.getElementById('bgUpload').click()" title="Upload cover photo">
+              <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            </div>
+            <span class="upload-label">Cover Photo</span>
+            <input type="file" id="bgUpload" class="file-input" accept="image/*">
+          </div>
+        </div>
+
+        <div class="step-hint">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <p>Both photos are optional but recommended. Accepted formats: JPG, PNG, WebP.</p>
+        </div>
+
+        <div class="btn-group">
+          <div class="spacer"></div>
+          <button type="button" class="btn btn-primary" id="nextToStep2">
+            Continue
+            <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="form-step" id="step2">
+        <div class="row">
+          <div class="input-group">
+            <label>Full Name <span class="req">*</span></label>
+            <input type="text" id="fullname" placeholder="Juan Dela Cruz" required autocomplete="off">
+          </div>
+          <div class="input-group">
+            <label>Nickname <span class="req">*</span></label>
+            <input type="text" id="nickname" placeholder="Juan" required autocomplete="off">
+          </div>
+        </div>
+        <div class="row">
+          <div class="input-group">
+            <label>Suffix</label>
+            <input type="text" id="suffix" placeholder="Jr., III, etc." autocomplete="off">
+          </div>
+          <div class="input-group">
+            <label>Birthdate <span class="req">*</span></label>
+            <input type="date" id="birthdate" required>
+          </div>
+        </div>
+        <div class="row">
+          <div class="input-group">
+            <label>ID Number <span class="req">*</span></label>
+            <input type="text" id="idNumber" placeholder="BEPO-PESO ID" required autocomplete="off">
+          </div>
+          <div class="input-group">
+            <label>Status</label>
+            <input type="text" id="status" placeholder="Active / Member" autocomplete="off">
+          </div>
+        </div>
+
+        <div class="section-divider"><span>Emergency Contact</span></div>
+
+        <div class="row">
+          <div class="input-group">
+            <label>Contact Name</label>
+            <input type="text" id="emergencyName" placeholder="Full name" autocomplete="off">
+          </div>
+          <div class="input-group">
+            <label>Contact Number</label>
+            <input type="tel" id="emergencyNumber" placeholder="0912-345-6789" autocomplete="off">
+          </div>
+        </div>
+
+        <div class="section-divider"><span>Address</span></div>
+
+        <div class="input-group full" style="margin-bottom:4px;">
+          <label>Full Address</label>
+          <textarea id="address" rows="2" placeholder="Street, Barangay, City"></textarea>
+        </div>
+
+        <div class="btn-group">
+          <button type="button" class="btn btn-ghost" id="backToStep1">
+            <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            Back
+          </button>
+          <button type="button" class="btn btn-primary" id="nextToStep3">
+            Continue
+            <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="form-step" id="step3">
+        <div class="section-divider"><span>Generated Credentials</span></div>
+
+        <div class="account-preview">
+          <div class="account-row">
+            <span class="account-key">user_id</span>
+            <span class="account-val highlight" id="userIdDisplay">—</span>
+          </div>
+          <div class="account-row">
+            <span class="account-key">password</span>
+            <span class="account-val" id="generatedPassword">—</span>
+          </div>
+          <div class="account-row">
+            <span class="account-key">status</span>
+            <span class="account-val" id="statusDisplay">Active</span>
+          </div>
+        </div>
+
+        <div class="info-note">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Password is auto-generated as <code style="font-family:var(--mono); color:var(--accent); font-size:11px;">nickname + age + !</code> and can be changed after first login.
+        </div>
+
+        <div class="btn-group">
+          <button type="button" class="btn btn-ghost" id="backToStep2">
+            <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            Back
+          </button>
+          <button type="button" class="btn btn-success" id="saveRegistration">
+            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            Save & Register
+          </button>
+        </div>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<!-- Modal -->
+<div id="popupModal" class="modal-overlay hidden">
+  <div class="modal-card" id="modalContent"></div>
+</div>
+
+<script src="navbar.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+  const SUPABASE_URL = 'https://iharcxdakmyxjpqpcbnb.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloYXJjeGRha215eGpwcXBjYm5iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0ODc0NDEsImV4cCI6MjA5NDA2MzQ0MX0.5BE8ckW-3g5mJmXyrDWO_cytfI-_JrMaV4LQip7pbvs';
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const stepItems   = document.querySelectorAll('.step-item');
+  const step1       = document.getElementById('step1');
+  const step2       = document.getElementById('step2');
+  const step3       = document.getElementById('step3');
+
+  const profileUpload = document.getElementById('profileUpload');
+  const bgUpload      = document.getElementById('bgUpload');
+  const profilePreview= document.getElementById('profilePreview');
+  const bgPreview     = document.getElementById('bgPreview');
+
+  const fullname        = document.getElementById('fullname');
+  const nickname        = document.getElementById('nickname');
+  const suffix          = document.getElementById('suffix');
+  const birthdate       = document.getElementById('birthdate');
+  const idNumber        = document.getElementById('idNumber');
+  const status          = document.getElementById('status');
+  const emergencyName   = document.getElementById('emergencyName');
+  const emergencyNumber = document.getElementById('emergencyNumber');
+  const address         = document.getElementById('address');
+
+  const userIdDisplay     = document.getElementById('userIdDisplay');
+  const generatedPassword = document.getElementById('generatedPassword');
+  const statusDisplay     = document.getElementById('statusDisplay');
+
+  const popupModal  = document.getElementById('popupModal');
+  const modalContent= document.getElementById('modalContent');
+
+  let profileFileBase64 = null;
+  let bgFileBase64      = null;
+
+  function generateUUID() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+      const r = Math.random() * 16 | 0;
+      return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    });
+  }
+
+  function calculateAge(d) {
+    if (!d) return 0;
+    const today = new Date(), birth = new Date(d);
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+    return age;
+  }
+
+  function updateStepBar(active) {
+    stepItems.forEach(el => {
+      const n = parseInt(el.dataset.step);
+      el.classList.remove('active', 'completed');
+      if (n === active)    el.classList.add('active');
+      else if (n < active) el.classList.add('completed');
+    });
+  }
+
+  function showStep(n) {
+    [step1, step2, step3].forEach(s => s && s.classList.remove('active-step'));
+    const target = [null, step1, step2, step3][n];
+    if (target) target.classList.add('active-step');
+    updateStepBar(n);
+    if (n === 3) generateAccountPreview();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function generateAccountPreview() {
+    const id   = idNumber.value.trim();
+    const nick = nickname.value.trim();
+    const age  = birthdate.value ? calculateAge(birthdate.value) : '';
+    const st   = status.value.trim() || 'Active';
+    userIdDisplay.textContent     = id   || '(missing)';
+    generatedPassword.textContent = (nick && age !== '') ? `${nick}${age}!` : 'nickname+age!';
+    statusDisplay.textContent     = st;
+  }
+
+  function handleFileUpload(fileInput, previewEl, isProfile) {
+    const file = fileInput.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const url = e.target.result;
+      if (isProfile) profileFileBase64 = url;
+      else           bgFileBase64      = url;
+      previewEl.style.backgroundImage = `url(${url})`;
+      previewEl.innerHTML = '';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  profileUpload.addEventListener('change', e => handleFileUpload(e.target, profilePreview, true));
+  bgUpload.addEventListener('change',      e => handleFileUpload(e.target, bgPreview, false));
+
+  document.getElementById('nextToStep2').addEventListener('click', e => { e.preventDefault(); showStep(2); });
+  document.getElementById('backToStep1').addEventListener('click', e => { e.preventDefault(); showStep(1); });
+
+  document.getElementById('nextToStep3').addEventListener('click', e => {
+    e.preventDefault();
+    if (!fullname.value.trim() || !nickname.value.trim() || !birthdate.value || !idNumber.value.trim()) {
+      showError('Required fields missing', 'Please fill in Full Name, Nickname, Birthdate, and ID Number before continuing.');
+      return;
+    }
+    showStep(3);
+  });
+
+  document.getElementById('backToStep2').addEventListener('click', e => { e.preventDefault(); showStep(2); });
+
+  /* ── Modal helpers ── */
+  function showModal(html) {
+    modalContent.innerHTML = html;
+    popupModal.classList.remove('hidden');
+  }
+  function hideModal() { popupModal.classList.add('hidden'); }
+
+  function showLoading(msg = 'Registering member…') {
+    showModal(`
+      <div class="spinner-ring"></div>
+      <div class="modal-title">${msg}</div>
+      <div class="modal-body">Please wait a moment.</div>
+    `);
+  }
+
+  function showError(title, msg) {
+    showModal(`
+      <div class="modal-icon error">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </div>
+      <div class="modal-title">${title}</div>
+      <div class="modal-body">${msg}</div>
+      <button class="btn btn-ghost" style="margin-top:4px;" onclick="document.getElementById('popupModal').classList.add('hidden')">
+        Close
+      </button>
+    `);
+  }
+
+  function showSuccessAndRedirect() {
+    showModal(`
+      <div class="modal-icon success">
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div class="modal-title">Registration complete</div>
+      <div class="modal-body">Redirecting to the member records page…</div>
+    `);
+    setTimeout(() => {
+      hideModal();
+      window.location.href = 'record_user.html';
+    }, 2000);
+  }
+
+  document.getElementById('saveRegistration').addEventListener('click', async function (e) {
+    e.preventDefault();
+
+    if (!fullname.value.trim() || !nickname.value.trim() || !birthdate.value || !idNumber.value.trim()) {
+      showError('Incomplete information', 'Please go back and fill in all required fields.');
+      return;
+    }
+
+    const userId  = idNumber.value.trim();
+    const nick    = nickname.value.trim();
+    const age     = calculateAge(birthdate.value);
+    const password = `${nick}${age}!`;
+
+    showLoading('Creating account…');
+
+    const memberData = {
+      user_id:                  generateUUID(),
+      fullname:                 fullname.value.trim(),
+      nickname:                 nick,
+      suffix:                   suffix.value.trim(),
+      birthdate:                birthdate.value,
+      id_number:                userId,
+      password:                 password,
+      status:                   status.value.trim() || 'Active',
+      emergency_contact_name:   emergencyName.value.trim(),
+      emergency_contact_number: emergencyNumber.value.trim(),
+      address:                  address.value.trim(),
+      profile_image:            profileFileBase64,
+      background_image:         bgFileBase64,
+    };
+
+    try {
+      const { error } = await supabase.from('members').insert([memberData]).select();
+      if (error) throw error;
+      showSuccessAndRedirect();
+    } catch (err) {
+      console.error('Registration error:', err);
+      showError('Registration failed', err.message || 'An unexpected error occurred. Please try again.');
+    }
+  });
+
+  showStep(1);
+});
+</script>
+</body>
+</html>

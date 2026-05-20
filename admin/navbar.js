@@ -1,0 +1,493 @@
+(function () {
+  const CSS_ID = 'admin-navbar-styles-v2';
+
+  function ensureStyles() {
+    if (document.getElementById(CSS_ID)) return;
+    const css = `
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+  --nb-bg: #0d0f14;
+  --nb-bg2: #14171f;
+  --nb-bg3: #1c2030;
+  --nb-line: rgba(255,255,255,0.07);
+  --nb-text: #e8eaf0;
+  --nb-muted: rgba(232,234,240,0.45);
+  --nb-accent: #5b8af5;
+  --nb-accent-glow: rgba(91,138,245,0.18);
+  --nb-active-bg: rgba(91,138,245,0.12);
+  --nb-hover: rgba(255,255,255,0.05);
+  --nb-danger: #f87171;
+  --nb-danger-bg: rgba(248,113,113,0.08);
+  --nb-topbar-h: 60px;
+  --nb-sidebar-w: 248px;
+  --nb-font: 'DM Sans', system-ui, sans-serif;
+  --nb-mono: 'DM Mono', monospace;
+  --nb-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --nb-radius: 10px;
+  --nb-radius-sm: 7px;
+}
+
+*,*::before,*::after { box-sizing: border-box; }
+
+.nb-topbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: var(--nb-topbar-h);
+  background: var(--nb-bg);
+  border-bottom: 1px solid var(--nb-line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px 0 16px;
+  z-index: 1000;
+  font-family: var(--nb-font);
+}
+
+.nb-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nb-toggle {
+  display: none;
+  background: none;
+  border: 1px solid var(--nb-line);
+  color: var(--nb-muted);
+  width: 36px; height: 36px;
+  border-radius: var(--nb-radius-sm);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+  flex-shrink: 0;
+}
+.nb-toggle:hover {
+  border-color: var(--nb-accent);
+  color: var(--nb-accent);
+  background: var(--nb-accent-glow);
+}
+.nb-toggle svg {
+  width: 18px; height: 18px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  fill: none;
+  stroke-linecap: round;
+  transition: opacity 0.2s;
+}
+
+.nb-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  user-select: none;
+}
+
+.nb-logo {
+  width: 34px; height: 34px;
+  background: var(--nb-bg3);
+  border: 1px solid var(--nb-line);
+  border-radius: var(--nb-radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+.nb-logo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--nb-accent-glow) 0%, transparent 70%);
+}
+.nb-logo span {
+  font-family: var(--nb-mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--nb-accent);
+  letter-spacing: 0.5px;
+  position: relative;
+  z-index: 1;
+}
+
+.nb-brand-text .name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--nb-text);
+  letter-spacing: -0.2px;
+  line-height: 1.2;
+}
+.nb-brand-text .tag {
+  font-size: 10.5px;
+  color: var(--nb-muted);
+  font-weight: 400;
+  letter-spacing: 0.2px;
+}
+
+.nb-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nb-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  background: var(--nb-bg2);
+  border: 1px solid var(--nb-line);
+  border-radius: var(--nb-radius-sm);
+  font-size: 12px;
+  color: var(--nb-muted);
+  font-family: var(--nb-font);
+}
+.nb-badge .dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #4ade80;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 2px rgba(74,222,128,0.2);
+}
+
+.nb-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 998;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  opacity: 0;
+  transition: opacity 0.25s var(--nb-ease);
+}
+.nb-overlay.active {
+  display: block;
+  opacity: 1;
+}
+
+.nb-sidebar {
+  position: fixed;
+  top: var(--nb-topbar-h);
+  left: 0;
+  bottom: 0;
+  width: var(--nb-sidebar-w);
+  background: var(--nb-bg);
+  border-right: 1px solid var(--nb-line);
+  display: flex;
+  flex-direction: column;
+  z-index: 999;
+  font-family: var(--nb-font);
+  transition: transform 0.28s var(--nb-ease);
+  overflow: hidden;
+}
+.nb-sidebar.collapsed { transform: translateX(-100%); }
+
+.nb-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.9px;
+  color: var(--nb-muted);
+  text-transform: uppercase;
+  padding: 20px 18px 8px;
+  opacity: 0.7;
+}
+
+.nb-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 10px;
+  scrollbar-width: none;
+}
+.nb-nav::-webkit-scrollbar { display: none; }
+
+.nb-nav ul { list-style: none; margin: 0; padding: 0; }
+.nb-nav li { margin: 1px 0; }
+
+.nb-nav a {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 9px 12px;
+  border-radius: var(--nb-radius-sm);
+  text-decoration: none;
+  color: var(--nb-muted);
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.15s, color 0.15s;
+  position: relative;
+}
+.nb-nav a .nb-icon {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  background: transparent;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.nb-nav a .nb-icon svg {
+  width: 16px; height: 16px;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.nb-nav a:hover {
+  background: var(--nb-hover);
+  color: var(--nb-text);
+}
+.nb-nav a:hover .nb-icon { background: rgba(255,255,255,0.05); }
+
+.nb-nav a.active {
+  background: var(--nb-active-bg);
+  color: var(--nb-accent);
+}
+.nb-nav a.active .nb-icon {
+  background: var(--nb-accent-glow);
+}
+.nb-nav a.active::after {
+  content: '';
+  position: absolute;
+  right: 0; top: 50%;
+  transform: translateY(-50%);
+  width: 2px; height: 16px;
+  background: var(--nb-accent);
+  border-radius: 2px 0 0 2px;
+}
+
+.nb-usercard {
+  padding: 12px 10px;
+  border-top: 1px solid var(--nb-line);
+}
+.nb-usercard-inner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 10px;
+  border-radius: var(--nb-radius-sm);
+  background: var(--nb-bg2);
+  border: 1px solid var(--nb-line);
+}
+.nb-avatar {
+  width: 34px; height: 34px;
+  border-radius: 8px;
+  background: var(--nb-active-bg);
+  border: 1px solid rgba(91,138,245,0.25);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--nb-accent);
+  font-size: 13px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.nb-user-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--nb-text);
+  line-height: 1.2;
+}
+.nb-user-role {
+  font-size: 11px;
+  color: var(--nb-muted);
+  font-weight: 400;
+}
+
+.nb-version {
+  font-family: var(--nb-mono);
+  font-size: 10px;
+  color: var(--nb-muted);
+  text-align: center;
+  padding: 8px 10px 12px;
+  opacity: 0.5;
+  letter-spacing: 0.3px;
+}
+
+.admin-content-shift {
+  margin-top: var(--nb-topbar-h);
+  margin-left: var(--nb-sidebar-w);
+  transition: margin-left 0.28s var(--nb-ease);
+  min-height: calc(100vh - var(--nb-topbar-h));
+}
+.admin-content-shift.sidebar-collapsed { margin-left: 0; }
+
+@media (max-width: 880px) {
+  .nb-toggle { display: flex; }
+  .nb-badge { display: none; }
+  .nb-sidebar { transform: translateX(-100%); }
+  .nb-sidebar.open { transform: translateX(0); }
+  .admin-content-shift { margin-left: 0 !important; }
+}
+`;
+    const s = document.createElement('style');
+    s.id = CSS_ID;
+    s.textContent = css;
+    document.head.appendChild(s);
+  }
+
+  const ICONS = {
+    menu: `<svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>`,
+    close: `<svg viewBox="0 0 24 24"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg>`,
+    home: `<svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/><polyline points="9 21 9 12 15 12 15 21"/></svg>`,
+    addUser: `<svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="16" y1="11" x2="22" y2="11"/></svg>`,
+    users: `<svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+    table: `<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="9" x2="9" y2="21"/></svg>`,
+    shield: `<svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+    idCard: `<svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="7" y1="10" x2="17" y2="10"/><line x1="7" y1="14" x2="13" y2="14"/></svg>`,
+  };
+
+  function icon(key) {
+    return `<span class="nb-icon" aria-hidden="true">${ICONS[key] || ''}</span>`;
+  }
+
+  function createNavHtml() {
+    return `
+<header class="nb-topbar" role="banner">
+  <div class="nb-topbar-left">
+    <button class="nb-toggle" id="nb-toggle" aria-label="Toggle navigation" aria-expanded="false">
+      ${ICONS.menu}
+    </button>
+    <a href="index.html" class="nb-brand" aria-label="BEPO-PESO home">
+      <div class="nb-logo"><span>BP</span></div>
+      <div class="nb-brand-text">
+        <div class="name">BEPO-PESO</div>
+        <div class="tag">Member Management</div>
+      </div>
+    </a>
+  </div>
+  <div class="nb-topbar-right">
+    <div class="nb-badge">
+      <span class="dot"></span>
+      <span>Admin</span>
+    </div>
+  </div>
+</header>
+
+<div class="nb-overlay" id="nb-overlay" aria-hidden="true"></div>
+
+<aside class="nb-sidebar" id="nb-sidebar" aria-label="Main navigation">
+  <div class="nb-section-label">Navigation</div>
+  <nav class="nb-nav">
+    <ul>
+      <li><a href="index.html" id="nav-home">${icon('home')}Dashboard</a></li>
+      <li><a href="register.html" id="nav-add-member">${icon('addUser')}Add Member</a></li>
+      <li><a href="record_user.html" id="nav-record-user">${icon('users')}Record User</a></li>
+      <li><a href="table.html" id="nav-table">${icon('table')}Data Table</a></li>
+      <li><a href="id_employee.html" id="nav-id-employee">${icon('idCard')}ID Employee</a></li>
+    </ul>
+  </nav>
+  <div class="nb-usercard">
+    <div class="nb-usercard-inner">
+      <div class="nb-avatar">${ICONS.shield}</div>
+      <div>
+        <div class="nb-user-name">Administrator</div>
+        <div class="nb-user-role">System Administrator</div>
+      </div>
+    </div>
+  </div>
+  <div class="nb-version">BEPO-PESO v1.0 &bull; 2026</div>
+</aside>
+`;
+  }
+
+  function markActive() {
+    const page = window.location.pathname.split('/').pop().toLowerCase() || 'index.html';
+    const map = {
+      'index.html': 'nav-home',
+      '': 'nav-home',
+      'register.html': 'nav-add-member',
+      'record_user.html': 'nav-record-user',
+      'table.html': 'nav-table',
+      'id_employee.html': 'nav-id-employee',
+    };
+    const id = map[page];
+    if (id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('active');
+    }
+  }
+
+  function attachBehavior() {
+    const toggle = document.getElementById('nb-toggle');
+    const sidebar = document.getElementById('nb-sidebar');
+    const overlay = document.getElementById('nb-overlay');
+    if (!toggle || !sidebar) return;
+
+    const isMobile = () => window.innerWidth <= 880;
+
+    function isOpen() {
+      return isMobile() ? sidebar.classList.contains('open') : !sidebar.classList.contains('collapsed');
+    }
+
+    function open() {
+      if (isMobile()) {
+        sidebar.classList.add('open');
+        if (overlay) { overlay.classList.add('active'); overlay.removeAttribute('aria-hidden'); }
+        document.body.style.overflow = 'hidden';
+      } else {
+        sidebar.classList.remove('collapsed');
+        document.querySelectorAll('.admin-content-shift').forEach(el => el.classList.remove('sidebar-collapsed'));
+      }
+      toggle.setAttribute('aria-expanded', 'true');
+      toggle.innerHTML = ICONS.close;
+    }
+
+    function close() {
+      if (isMobile()) {
+        sidebar.classList.remove('open');
+        if (overlay) { overlay.classList.remove('active'); overlay.setAttribute('aria-hidden', 'true'); }
+        document.body.style.overflow = '';
+      } else {
+        sidebar.classList.add('collapsed');
+        document.querySelectorAll('.admin-content-shift').forEach(el => el.classList.add('sidebar-collapsed'));
+      }
+      toggle.setAttribute('aria-expanded', 'false');
+      toggle.innerHTML = ICONS.menu;
+    }
+
+    toggle.addEventListener('click', () => isOpen() ? close() : open());
+    if (overlay) overlay.addEventListener('click', close);
+
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && isMobile()) close(); });
+
+    sidebar.querySelectorAll('.nb-nav a').forEach(a => {
+      a.addEventListener('click', () => { if (isMobile()) close(); });
+    });
+  }
+
+  window.renderAdminNavbar = function (options) {
+    ensureStyles();
+
+    const container = (options && options.containerSelector)
+      ? document.querySelector(options.containerSelector)
+      : document.body;
+    if (!container || document.getElementById('nb-sidebar')) return;
+
+    const tmp = document.createElement('div');
+    tmp.innerHTML = createNavHtml();
+    const topbar = tmp.querySelector('.nb-topbar');
+    const overlay = tmp.querySelector('.nb-overlay');
+    const sidebar = tmp.querySelector('.nb-sidebar');
+
+    if (container === document.body) {
+      [topbar, overlay, sidebar].forEach(el => { if (el) container.appendChild(el); });
+    } else {
+      while (tmp.firstChild) container.prepend(tmp.firstChild);
+    }
+
+    const selectors = ['.main', '#main', 'main', '.content', '#content', '.register-container', '.page', '#page'];
+    let shifted = false;
+    for (const sel of selectors) {
+      const el = document.querySelector(sel);
+      if (el) { el.classList.add('admin-content-shift'); shifted = true; break; }
+    }
+    if (!shifted) document.body.style.paddingTop = 'var(--nb-topbar-h, 60px)';
+
+    markActive();
+    attachBehavior();
+  };
+
+  document.addEventListener('DOMContentLoaded', () => {
+    if (!document.getElementById('nb-sidebar')) renderAdminNavbar();
+  });
+})();
