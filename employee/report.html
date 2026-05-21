@@ -3,116 +3,468 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
-<title>Reports | BEPO-PESO</title>
+<title>Procurement Reports | BEPO-PESO</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <style>
 :root {
-  --bg: #0d0f14;
-  --bg2: #14171f;
-  --bg3: #1c2030;
-  --line: rgba(255,255,255,0.06);
-  --text: #e8eaf0;
-  --text2: #b0b5c0;
-  --muted: rgba(232,234,240,0.5);
-  --accent: #3b6ef5;
-  --accent-g: rgba(59,110,245,0.15);
-  --gold: #f59e0b;
-  --gold-g: rgba(245,158,11,0.12);
+  --bg: #f0f2f7;
+  --surface: #ffffff;
+  --surface2: #f7f9fc;
+  --border: #e2e8f0;
+  --text: #0d1b2e;
+  --text2: #4a5a6e;
+  --muted: #8a97a8;
+  --accent: #1a56db;
+  --accent-dark: #1345b7;
+  --accent-light: #ebf0ff;
+  --green: #0d7e4b;
+  --green-bg: #e6f5ec;
+  --red: #dc2626;
+  --red-bg: #fdecea;
+  --amber: #d97706;
+  --amber-bg: #fef3c7;
   --font: 'DM Sans', system-ui, sans-serif;
   --mono: 'DM Mono', monospace;
-  --display: 'Playfair Display', Georgia, serif;
-  --ease: cubic-bezier(0.4,0,0.2,1);
-  --radius: 16px;
-  --radius-sm: 10px;
+  --radius: 14px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 3px rgba(13,27,46,0.06), 0 8px 24px rgba(13,27,46,0.07);
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
-.construction-wrapper { width: 100%; max-width: 700px; animation: fadeUp 0.6s var(--ease) both; text-align: center; }
-@keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; font-size: 15px; line-height: 1.6; }
+.main { padding: 28px 32px 40px; max-width: 100%; margin: 0 auto; animation: fadeUp 0.4s ease both; width: 100%; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 
-.construction-icon { font-size: 72px; margin-bottom: 24px; animation: bounce 2s ease-in-out infinite; display: inline-block; }
-@keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-16px); } }
+.page-header { margin-bottom: 8px; }
+.page-header h2 { font-size: 22px; font-weight: 700; color: var(--text); letter-spacing: -0.4px; display: flex; align-items: center; gap: 8px; }
+.page-subtitle { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
 
-.construction-card { background: var(--bg2); border: 1px solid var(--line); border-radius: 24px; padding: 48px 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); position: relative; overflow: hidden; }
-.construction-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
-.construction-card::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--accent), transparent); }
+.header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
+.btn { display: inline-flex; align-items: center; gap: 7px; border: none; border-radius: 10px; padding: 9px 18px; font-size: 13.5px; font-weight: 600; font-family: var(--font); cursor: pointer; transition: all 0.14s ease; white-space: nowrap; text-decoration: none; }
+.btn-pdf { background: #dc2626; color: #fff; }
+.btn-pdf:hover { background: #b91c1c; transform: translateY(-1px); }
+.btn-secondary { background: var(--surface); color: var(--text2); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--surface2); }
 
-.construction-badge { display: inline-flex; align-items: center; gap: 8px; padding: 6px 16px; background: var(--gold-g); border: 1px solid rgba(245,158,11,0.2); border-radius: 40px; font-size: 11px; font-weight: 600; color: var(--gold); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 28px; font-family: var(--mono); }
-.construction-badge .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gold); animation: pulse 1.5s ease-in-out infinite; }
-@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.4); } }
+.filter-bar { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+.filter-bar label { font-size: 12px; font-weight: 600; color: var(--text2); white-space: nowrap; }
+.filter-bar select { padding: 7px 12px; border: 1.5px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font-size: 12.5px; font-family: var(--font); cursor: pointer; outline: none; }
+.filter-bar select:focus { border-color: var(--accent); }
+.filter-bar .badge-count { font-size: 12px; color: var(--accent); background: var(--accent-light); padding: 5px 12px; border-radius: 20px; font-weight: 600; margin-left: auto; }
 
-.construction-title { font-family: var(--display); font-size: 32px; font-weight: 700; color: var(--text); letter-spacing: -0.5px; margin-bottom: 10px; }
-.construction-subtitle { font-size: 14px; color: var(--muted); margin-bottom: 36px; line-height: 1.6; }
+.table-card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); overflow: hidden; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 600px; }
+thead { background: var(--surface2); border-bottom: 2px solid var(--border); position: sticky; top: 0; }
+th { padding: 12px 12px; text-align: left; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; background: var(--surface2); }
+td { padding: 12px 12px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+tbody tr:hover { background: var(--accent-light); }
+.td-mono { font-family: var(--mono); font-weight: 600; color: var(--accent-dark); }
+.empty-state { text-align: center; padding: 40px; color: var(--muted); }
+.badge { display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 20px; font-size: 10.5px; font-weight: 600; white-space: nowrap; }
+.badge-complete { background: var(--green-bg); color: var(--green); }
+.badge-incomplete { background: var(--amber-bg); color: #92400e; }
 
-.paragraphs { display: flex; flex-direction: column; gap: 20px; text-align: left; margin-bottom: 36px; }
-.paragraph-card { background: var(--bg3); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 20px 22px; transition: border-color 0.3s; }
-.paragraph-card:hover { border-color: rgba(245,158,11,0.25); }
-.paragraph-card .p-icon { font-size: 24px; margin-bottom: 8px; }
-.paragraph-card h4 { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 6px; letter-spacing: -0.2px; }
-.paragraph-card p { font-size: 12.5px; color: var(--muted); line-height: 1.8; }
+tfoot { background: var(--surface2); border-top: 2px solid var(--border); font-weight: 700; }
+tfoot td { padding: 14px 12px; font-size: 13px; color: var(--text); background: var(--surface2); }
 
-.status-bar { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px 20px; background: rgba(59,110,245,0.06); border: 1px solid rgba(59,110,245,0.15); border-radius: 40px; }
-.status-bar .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); animation: pulse 1.5s ease-in-out infinite; flex-shrink: 0; }
-.status-bar span { font-size: 12px; color: var(--accent); font-weight: 500; font-family: var(--mono); letter-spacing: 0.3px; }
+.toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+.toast { background: #0d1b2e; color: #fff; padding: 12px 18px; border-radius: 12px; font-size: 14px; font-weight: 500; box-shadow: 0 8px 30px rgba(0,0,0,0.2); pointer-events: all; animation: slideIn 0.25s ease; }
+.toast.success .toast-icon { color: #4ade80; }
+.toast.error .toast-icon { color: #f87171; }
+@keyframes slideIn { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
 
-.footer-note { margin-top: 24px; font-size: 10px; color: var(--muted); font-family: var(--mono); letter-spacing: 0.2px; opacity: 0.6; }
+/* PDF Export Styles - Clean and clear */
+@media print {
+  .btn, .filter-bar, .header-actions, .toast-container, .navbar, .pms-topbar {
+    display: none !important;
+  }
+  body {
+    background: white;
+    margin: 0;
+    padding: 20px;
+  }
+  .main {
+    padding: 0;
+    margin: 0;
+  }
+  .table-card {
+    box-shadow: none;
+    border: 1px solid #ddd;
+    border-radius: 0;
+  }
+  table {
+    page-break-inside: avoid;
+    font-size: 10pt;
+  }
+  th, td {
+    padding: 8px 6px;
+    border: 1px solid #ddd;
+  }
+  thead {
+    display: table-header-group;
+  }
+  tfoot {
+    display: table-footer-group;
+  }
+  .badge {
+    border: 1px solid #ccc;
+    background: #f5f5f5 !important;
+    color: #000 !important;
+  }
+}
 
-@media (max-width: 500px) { 
-  .construction-card { padding: 32px 20px; } 
-  .construction-title { font-size: 24px; }
+@media (max-width: 800px) { 
+  .main { padding: 16px 14px 32px; } 
 }
 </style>
 </head>
 <body>
 
-<div class="construction-wrapper">
-  <div class="construction-card">
-    <div class="construction-badge">
-      <span class="dot"></span>
-      Under Construction
-      <span class="dot"></span>
-    </div>
-
-    <div class="construction-icon">🚧</div>
-
-    <div class="construction-title">Reports Module</div>
-    <div class="construction-subtitle">Our development team is actively building this feature to serve you better.</div>
-
-    <div class="paragraphs">
-      <div class="paragraph-card">
-        <div class="p-icon">🔧</div>
-        <h4>System Development in Progress</h4>
-        <p>The BEPO-PESO Procurement Data System Reports module is currently undergoing comprehensive development and rigorous testing. Our engineering team is implementing advanced data aggregation algorithms, dynamic filtering capabilities, and seamless export functionality to ensure that every procurement record, category summary, and financial breakdown is presented with absolute precision and clarity. We are meticulously integrating the dynamic column system that adapts to your configured field settings, ensuring that your reports reflect exactly the data points you have chosen to track across all procurement categories.</p>
-      </div>
-
-      <div class="paragraph-card">
-        <div class="p-icon">📊</div>
-        <h4>Comprehensive Reporting Features Coming Soon</h4>
-        <p>Once completed, this module will provide you with a full suite of reporting tools including monthly procurement summaries, category-based cost analysis, supplier performance tracking, bid status monitoring, and grand total computations that account for both direct pricing and item-level costs. You will be able to export professional, print-ready reports in multiple formats including Microsoft Word with landscape orientation, ensuring your documentation meets the highest standards for government procurement compliance and audit requirements. Every report will be filterable by date range, category, payment mode, and bid status.</p>
-      </div>
-
-      <div class="paragraph-card">
-        <div class="p-icon">✅</div>
-        <h4>Quality Assurance & Deployment Timeline</h4>
-        <p>We are currently in the final phase of quality assurance, conducting thorough validation of all data pipelines, user interface components, and export mechanisms. Our commitment is to deliver a robust, reliable, and user-friendly reporting experience that integrates seamlessly with the existing procurement management workflow. We appreciate your patience and understanding as we complete these final steps. The BEPO-PESO administration will issue an official notification once the Reports module is fully operational and ready for production use. Rest assured, the system is being built to serve the needs of the Province of Bohol with the highest standards of excellence.</p>
-      </div>
-    </div>
-
-    <div class="status-bar">
-      <span class="status-dot"></span>
-      <span>Developer Still Processing · Please Wait Until System Update is Complete</span>
-      <span class="status-dot"></span>
-    </div>
-
-    <div class="footer-note">&copy; 2026 BEPO-PESO · Procurement Data System · Province of Bohol</div>
+<main class="main">
+  <div class="page-header">
+    <h2>📊 Procurement Reports</h2>
   </div>
-</div>
+  <p class="page-subtitle">Dynamic columns based on category settings · Generate PDF reports</p>
+
+  <div class="header-actions">
+    <button class="btn btn-pdf" onclick="downloadPDF()">📄 Download PDF Report</button>
+  </div>
+
+  <div class="filter-bar">
+    <label>Month:</label>
+    <select id="filterMonth" onchange="applyFilters()">
+      <option value="">All</option>
+      <option value="0">Jan</option><option value="1">Feb</option><option value="2">Mar</option>
+      <option value="3">Apr</option><option value="4">May</option><option value="5">Jun</option>
+      <option value="6">Jul</option><option value="7">Aug</option><option value="8">Sep</option>
+      <option value="9">Oct</option><option value="10">Nov</option><option value="11">Dec</option>
+    </select>
+    <label>Category:</label>
+    <select id="filterCategory" onchange="applyFilters()">
+      <option value="">All Categories</option>
+    </select>
+    <label>Payment:</label>
+    <select id="filterPayment" onchange="applyFilters()">
+      <option value="">All</option>
+      <option value="Upon Completion">Upon Completion</option>
+      <option value="Progress Billing">Progress Billing</option>
+    </select>
+    <label>Bid Status:</label>
+    <select id="filterBidStatus" onchange="applyFilters()">
+      <option value="">All</option>
+      <option value="Complete">Complete</option>
+      <option value="Incomplete">Incomplete</option>
+    </select>
+    <span class="badge-count" id="countBadge">0 records</span>
+  </div>
+
+  <div class="table-card" id="reportTable">
+    <div class="table-wrap">
+      <table id="procurementTable">
+        <thead id="tableHead"></thead>
+        <tbody id="tableBody">
+          <tr><td colspan="10"><div class="empty-state">Loading records…</div></td></tr>
+        </tbody>
+        <tfoot id="tableFoot" style="display:none;"></tfoot>
+      </table>
+    </div>
+  </div>
+</main>
+
+<div class="toast-container" id="toastContainer"></div>
 
 <script src="navbar.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+
   if (window.renderPMSNavbar) renderPMSNavbar();
+
+  const SUPABASE_URL = 'https://iharcxdakmyxjpqpcbnb.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloYXJjeGRha215eGpwcXBjYm5iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0ODc0NDEsImV4cCI6MjA5NDA2MzQ0MX0.5BE8ckW-3g5mJmXyrDWO_cytfI-_JrMaV4LQip7pbvs';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  let records = [];
+  let categories = [];
+  let settings = [];
+  let globalColumns = [];
+
+  const TRACKING_KEYS = ['pr_number', 'nc_number', 'po_number', 'padmo_number', 'go_finance_number'];
+
+  const FIELD_LABELS = {
+    event: 'Event', date: 'Date', quarter: 'Quarter', menu: 'Menu',
+    description: 'Description', menu_description: 'Menu/Description',
+    unit_pax: 'Unit/Pax', quantity: 'Qty',
+    price: 'Price', item: 'Item', supplier: 'Supplier',
+    mode_of_payment: 'Payment Mode', scope_of_work: 'Scope of Work',
+    bid_doc_status: 'Bid Status', remarks: 'Remarks', time: 'Time',
+    pr_number: 'PR No.', nc_number: 'NC No.', po_number: 'PO No.',
+    padmo_number: 'PADMO No.', go_finance_number: 'G.O Finance No.'
+  };
+
+  function toast(msg, type) {
+    type = type || 'success';
+    var d = document.createElement('div');
+    d.className = 'toast ' + type;
+    d.innerHTML = '<span class="toast-icon">' + (type === 'success' ? '✓' : '✕') + '</span><span>' + msg + '</span>';
+    document.getElementById('toastContainer').appendChild(d);
+    setTimeout(function() { d.remove(); }, 3000);
+  }
+
+  async function loadData() {
+    try {
+      var catRes = await sb.from('procurement_categories').select('*').order('name', { ascending: true });
+      if (catRes.error) throw catRes.error;
+      categories = catRes.data || [];
+      populateCategoryFilter();
+
+      var setRes = await sb.from('procurement_field_settings').select('*');
+      if (setRes.error) throw setRes.error;
+      settings = setRes.data || [];
+
+      var fieldSet = new Set();
+      settings.forEach(function(s) {
+        (s.enabled_fields || []).forEach(function(f) {
+          if (TRACKING_KEYS.indexOf(f) === -1) {
+            fieldSet.add(f);
+          }
+        });
+      });
+      globalColumns = Array.from(fieldSet);
+
+      var recRes = await sb.from('procurement_records').select('*, procurement_categories(name), events!procurement_records_event_fkey(event_name), procurement_items!procurement_records_item_fkey(item_name, price)').order('created_at', { ascending: false });
+      if (recRes.error) throw recRes.error;
+      records = recRes.data || [];
+
+      renderTableHead();
+      applyFilters();
+    } catch (e) {
+      console.error('Load error:', e);
+      document.getElementById('tableBody').innerHTML = '<tr><td colspan="10"><div class="empty-state">Failed to load records</div></td></tr>';
+    }
+  }
+
+  function populateCategoryFilter() {
+    var select = document.getElementById('filterCategory');
+    select.innerHTML = '<option value="">All Categories</option>';
+    categories.forEach(function(cat) {
+      select.innerHTML += '<option value="' + cat.id + '">' + esc(cat.name) + '</option>';
+    });
+  }
+
+  function renderTableHead() {
+    var head = document.getElementById('tableHead');
+    var html = '<tr><th>#</th>';
+    globalColumns.forEach(function(col) {
+      html += '<th>' + (FIELD_LABELS[col] || col) + '</th>';
+    });
+    html += '</tr>';
+    head.innerHTML = html;
+  }
+
+  function applyFilters() {
+    var monthVal = document.getElementById('filterMonth').value;
+    var catVal = document.getElementById('filterCategory').value;
+    var payVal = document.getElementById('filterPayment').value;
+    var bidVal = document.getElementById('filterBidStatus').value;
+
+    var filtered = records.slice();
+
+    if (monthVal !== '') {
+      var monthNum = parseInt(monthVal);
+      filtered = filtered.filter(function(r) {
+        if (!r.created_at) return false;
+        return new Date(r.created_at).getMonth() === monthNum;
+      });
+    }
+    if (catVal !== '') {
+      filtered = filtered.filter(function(r) { return r.category_id === catVal; });
+    }
+    if (payVal !== '') {
+      filtered = filtered.filter(function(r) { return r.mode_of_payment === payVal; });
+    }
+    if (bidVal !== '') {
+      filtered = filtered.filter(function(r) { return r.bid_doc_status === bidVal; });
+    }
+
+    renderTableBody(filtered);
+  }
+  window.applyFilters = applyFilters;
+
+  function renderTableBody(filtered) {
+    var tbody = document.getElementById('tableBody');
+    var tfoot = document.getElementById('tableFoot');
+    document.getElementById('countBadge').textContent = filtered.length + ' record' + (filtered.length !== 1 ? 's' : '');
+
+    if (!filtered.length) {
+      tbody.innerHTML = '<tr><td colspan="' + (globalColumns.length + 1) + '"><div class="empty-state">No records found</div></td></tr>';
+      tfoot.style.display = 'none';
+      return;
+    }
+
+    var totalQty = 0;
+    var totalPrice = 0;
+    var totalItemCost = 0;
+    var grandTotal = 0;
+
+    tbody.innerHTML = filtered.map(function(r, i) {
+      var qty = Number(r.quantity) || 0;
+      var recordPrice = Number(r.price) || 0;
+      var itemPrice = (r.procurement_items && r.procurement_items.price) ? Number(r.procurement_items.price) : 0;
+      var itemTotalCost = itemPrice * qty;
+      var recordGrandTotal = recordPrice + itemTotalCost;
+      
+      totalQty += qty;
+      totalPrice += recordPrice;
+      totalItemCost += itemTotalCost;
+      grandTotal += recordGrandTotal;
+
+      var recordCatSettings = settings.find(function(s) { return s.category_id === r.category_id; });
+      var recordEnabledFields = recordCatSettings ? (recordCatSettings.enabled_fields || []) : [];
+
+      var rowHtml = '<tr><td style="color:var(--muted);font-size:11px;">' + (i + 1) + '</td>';
+      
+      globalColumns.forEach(function(col) {
+        if (recordEnabledFields.indexOf(col) === -1 && recordEnabledFields.length > 0) {
+          rowHtml += '<td>—</td>';
+        } else {
+          var val = getDisplayValue(r, col);
+          if (col === 'price') {
+            rowHtml += '<td class="td-mono">₱' + recordPrice.toFixed(2) + '</td>';
+          } else if (col === 'item') {
+            var itemName = val || '—';
+            rowHtml += '<td>' + itemName + '</td>';
+          } else if (col === 'quantity') {
+            rowHtml += '<td>' + (val || 0) + '</td>';
+          } else if (col === 'bid_doc_status') {
+            var isComplete = val === 'Complete';
+            rowHtml += '<td>' + (val ? '<span class="badge ' + (isComplete ? 'badge-complete' : 'badge-incomplete') + '">' + val + '</span>' : '—') + '</td>';
+          } else {
+            rowHtml += '<td>' + (val || '—') + '</td>';
+          }
+        }
+      });
+      rowHtml += '</tr>';
+      return rowHtml;
+    }).join('');
+
+    tfoot.style.display = '';
+    tfoot.innerHTML = '<tr>' +
+      '<td colspan="' + (globalColumns.length + 1) + '" style="padding:14px 12px;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;font-size:13px;">' +
+          '<span>📊 Total Records: <strong>' + filtered.length + '</strong></span>' +
+          '<span>📦 Total Qty: <strong>' + totalQty + '</strong></span>' +
+          '<span>💰 Total Price: <strong style="font-family:var(--mono);">₱' + totalPrice.toLocaleString('en-PH', { minimumFractionDigits: 2 }) + '</strong></span>' +
+          '<span>🏷️ Item Cost: <strong style="font-family:var(--mono);">₱' + totalItemCost.toLocaleString('en-PH', { minimumFractionDigits: 2 }) + '</strong></span>' +
+          '<span style="font-size:15px;">💵 <strong>GRAND TOTAL: <span style="font-family:var(--mono);color:var(--accent);">₱' + grandTotal.toLocaleString('en-PH', { minimumFractionDigits: 2 }) + '</span></strong></span>' +
+        '</div>' +
+      '</td>' +
+    '</tr>';
+  }
+
+  function getDisplayValue(record, col) {
+    if (col === 'event') return record.events ? record.events.event_name : (record.event_name || '—');
+    if (col === 'item') return record.procurement_items ? record.procurement_items.item_name : (record.item_name || '—');
+    if (col === 'date' && record.date) return new Date(record.date).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+    return record[col] || '';
+  }
+
+  // PDF Download Function - captures only the table
+  window.downloadPDF = function() {
+    const element = document.getElementById('reportTable');
+    
+    // Clone the table for PDF to avoid interference
+    const originalTable = document.getElementById('procurementTable');
+    const cloneTable = originalTable.cloneNode(true);
+    
+    // Create a temporary div for PDF generation
+    const pdfContainer = document.createElement('div');
+    pdfContainer.style.padding = '20px';
+    pdfContainer.style.backgroundColor = 'white';
+    pdfContainer.style.fontFamily = 'Arial, sans-serif';
+    
+    // Add title and date
+    const title = document.createElement('h2');
+    title.textContent = 'Procurement Report - BEPO-PESO';
+    title.style.color = '#0d1b2e';
+    title.style.marginBottom = '10px';
+    title.style.fontSize = '18px';
+    
+    const date = new Date();
+    const dateStr = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    const dateElem = document.createElement('p');
+    dateElem.textContent = 'Generated on: ' + dateStr;
+    dateElem.style.color = '#666';
+    dateElem.style.marginBottom = '20px';
+    dateElem.style.fontSize = '12px';
+    
+    // Get filter info
+    const filterMonth = document.getElementById('filterMonth');
+    const filterCategory = document.getElementById('filterCategory');
+    const filterPayment = document.getElementById('filterPayment');
+    const filterBid = document.getElementById('filterBidStatus');
+    
+    let filterText = '';
+    if (filterMonth.value || filterCategory.value || filterPayment.value || filterBid.value) {
+      filterText = '<div style="margin-bottom: 15px; font-size: 11px; color: #666;">Filters applied: ';
+      const filters = [];
+      if (filterMonth.value) filters.push('Month: ' + filterMonth.options[filterMonth.selectedIndex]?.text);
+      if (filterCategory.value) filters.push('Category: ' + filterCategory.options[filterCategory.selectedIndex]?.text);
+      if (filterPayment.value) filters.push('Payment: ' + filterPayment.value);
+      if (filterBid.value) filters.push('Bid Status: ' + filterBid.value);
+      filterText += filters.join(' · ') + '</div>';
+    }
+    
+    const filterDiv = document.createElement('div');
+    filterDiv.innerHTML = filterText;
+    
+    pdfContainer.appendChild(title);
+    pdfContainer.appendChild(dateElem);
+    if (filterText) pdfContainer.appendChild(filterDiv);
+    pdfContainer.appendChild(cloneTable);
+    
+    // Clean up the cloned table for PDF (remove any interactive elements)
+    const badges = cloneTable.querySelectorAll('.badge');
+    badges.forEach(badge => {
+      badge.style.backgroundColor = '#f0f0f0';
+      badge.style.color = '#000';
+      badge.style.border = '1px solid #ccc';
+    });
+    
+    const options = {
+      margin: [10, 10, 10, 10],
+      filename: 'procurement_report_' + date.toISOString().slice(0,19).replace(/:/g, '-') + '.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { 
+        scale: 2, 
+        letterRendering: true,
+        useCORS: true,
+        backgroundColor: '#ffffff'
+      },
+      jsPDF: { 
+        unit: 'mm', 
+        format: 'a4', 
+        orientation: 'landscape' 
+      }
+    };
+    
+    toast('Generating PDF report...', 'success');
+    
+    html2pdf().set(options).from(pdfContainer).save().then(() => {
+      toast('PDF downloaded successfully!', 'success');
+    }).catch((err) => {
+      console.error('PDF generation error:', err);
+      toast('Failed to generate PDF', 'error');
+    });
+  };
+
+  function esc(str) { 
+    if (!str) return ''; 
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); 
+  }
+
+  loadData();
 });
 </script>
 </body>
